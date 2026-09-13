@@ -19,10 +19,13 @@
 --meridian:#2bb88f;
 --caocao:#e2574c;
 --personal:#caa63d;
+--kb-id:#6c8aff;
+--kb-account:#e2a23c;
+--kb-file:#b98cff;
 --danger:#ef5468;
---font-serif:'Noto Serif SC',serif;
---font-body:'Inter',sans-serif;
---font-mono:'IBM Plex Mono',monospace;
+--font-serif:'Noto Serif SC','Noto Serif CJK SC','WenQuanYi Micro Hei',serif;
+--font-body:'Inter','Noto Sans SC','WenQuanYi Micro Hei','Droid Sans Fallback',sans-serif;
+--font-mono:'IBM Plex Mono','WenQuanYi Micro Hei Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
@@ -73,11 +76,14 @@ button.ghost:hover{background:var(--surface-2);}
 
 .add-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px;}
 .add-row{display:flex;gap:8px;margin-bottom:10px;}
-input[type=text],input[type=date],textarea{
+input[type=text],input[type=date],input[type=search],textarea{
 background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
 color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px 12px;
+-webkit-appearance:none;appearance:none;
 }
-input[type=text]:focus,input[type=date]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
+input[type=search]::-webkit-search-decoration,
+input[type=search]::-webkit-search-cancel-button{display:none;}
+input[type=text]:focus,input[type=date]:focus,input[type=search]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
 #taskInput{flex:1;}
 .hint{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin:-4px 0 10px 2px;}
 .meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
@@ -87,7 +93,10 @@ input[type=text]:focus,input[type=date]:focus,select:focus,textarea:focus{outlin
 .entity-btn.active[data-entity="Nexus"]{background:rgba(108,138,255,0.15);border-color:var(--nexus);color:var(--nexus);}
 .entity-btn.active[data-entity="Meridian"]{background:rgba(43,184,143,0.15);border-color:var(--meridian);color:var(--meridian);}
 .entity-btn.active[data-entity="曹操"]{background:rgba(226,87,76,0.15);border-color:var(--caocao);color:var(--caocao);}
-.entity-btn.active[data-entity="个人"]{background:rgba(202,166,61,0.15);border-color:var(--personal);color:var(--personal);}
+.entity-btn.active[data-entity="家庭"],.entity-btn.active[data-entity="个人"]{background:rgba(202,166,61,0.15);border-color:var(--personal);color:var(--personal);}
+.kb-cat.active[data-cat="id"]{background:rgba(108,138,255,0.15);border-color:var(--kb-id);color:var(--kb-id);}
+.kb-cat.active[data-cat="account"]{background:rgba(226,162,60,0.15);border-color:var(--kb-account);color:var(--kb-account);}
+.kb-cat.active[data-cat="file"]{background:rgba(185,140,255,0.15);border-color:var(--kb-file);color:var(--kb-file);}
 select{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 10px;}
 .meta-row input[type=date]{font-family:var(--font-mono);font-size:12px;width:150px;}
 button.primary{background:var(--nexus);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:var(--font-body);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;}
@@ -110,7 +119,7 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 .item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--nexus);border-radius:10px;margin-bottom:8px;overflow:hidden;}
 .item.entity-Meridian{border-left-color:var(--meridian);}
 .item.entity-曹操{border-left-color:var(--caocao);}
-.item.entity-个人{border-left-color:var(--personal);}
+.item.entity-家庭,.item.entity-个人{border-left-color:var(--personal);}
 .item-row{padding:12px 14px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;}
 .item.done .item-text{text-decoration:line-through;color:var(--text-dim);}
 .checkbox{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text-muted);flex:none;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:transparent;}
@@ -162,17 +171,50 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 .leftover-title{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin:14px 0 6px;}
 .leftover-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--border);}
 .leftover-item .d{color:var(--danger);font-family:var(--font-mono);font-size:11px;}
+
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:8px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -10px 28px rgba(0,0,0,0.35);}
+.nav-btn{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);border-radius:10px;padding:11px 12px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{background:rgba(108,138,255,0.14);color:var(--nexus);border-color:rgba(108,138,255,0.45);}
+.page{display:block;}
+.page[hidden]{display:none!important;}
+
+.kb-search{width:100%;margin-bottom:12px;}
+.kb-sync-hint{border:1px dashed var(--personal);border-radius:10px;padding:12px 14px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;margin-bottom:16px;line-height:1.65;background:rgba(202,166,61,0.08);}
+.kb-fields{margin:8px 0;}
+.kb-field-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+.kb-field-row input:first-child{width:28%;min-width:88px;}
+.kb-field-row input:nth-child(2){flex:1;}
+.kb-file-pick{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px;}
+.kb-file-meta{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);}
+.kb-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--nexus);border-radius:10px;margin-bottom:8px;padding:14px;}
+.kb-card.cat-id{border-left-color:var(--kb-id);}
+.kb-card.cat-account{border-left-color:var(--kb-account);}
+.kb-card.cat-file{border-left-color:var(--kb-file);}
+.kb-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.kb-card-title{font-size:15px;font-weight:600;line-height:1.4;word-break:break-word;}
+.kb-note{font-size:13px;color:var(--text-muted);margin:8px 0;white-space:pre-wrap;word-break:break-word;}
+.kb-kv{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--border);}
+.kb-kv .k{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);width:76px;flex:none;padding-top:3px;}
+.kb-kv .v{flex:1;font-size:14px;word-break:break-all;line-height:1.45;}
+.copy-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:4px 8px;font-family:var(--font-mono);font-size:11px;cursor:pointer;white-space:nowrap;}
+.copy-btn:hover{color:var(--text);}
+.copy-btn.copied{color:var(--meridian);border-color:var(--meridian);}
+.kb-file-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.item.readonly .item-row{cursor:default;}
+.item.readonly .checkbox{cursor:default;pointer-events:none;}
 </style>
 </head>
 <body>
 <div class="wrap">
+<div id="page-todos" class="page">
 <header>
 <div>
 <h1>待办中枢</h1>
 <div class="subtitle">跨设备收纳 · 微信 / 钉钉 / 飞书</div>
 </div>
 <div class="header-right">
-<div class="sync-status"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">已同步</span></div>
+<div class="sync-status"><span class="sync-dot"></span><span class="sync-label">已同步</span></div>
 <div class="header-actions">
 <button class="ghost" id="pasteBtn">粘贴拆解</button>
 <button class="ghost" id="summaryBtn">本周小结</button>
@@ -191,7 +233,7 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 <button class="entity-btn active" data-entity="Nexus">Nexus</button>
 <button class="entity-btn" data-entity="Meridian">Meridian</button>
 <button class="entity-btn" data-entity="曹操">曹操</button>
-<button class="entity-btn" data-entity="个人">个人</button>
+<button class="entity-btn" data-entity="家庭">家庭待办</button>
 </div>
 <div class="meta-row">
 <select id="platformSelect"><option value="微信">微信</option><option value="钉钉">钉钉</option><option value="飞书">飞书</option><option value="邮件">邮件</option><option value="其他">其他</option></select>
@@ -206,7 +248,7 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 <button class="filter-chip" data-filter="Nexus"><span class="sw" style="background:var(--nexus)"></span>Nexus <span id="cnt-Nexus"></span></button>
 <button class="filter-chip" data-filter="Meridian"><span class="sw" style="background:var(--meridian)"></span>Meridian <span id="cnt-Meridian"></span></button>
 <button class="filter-chip" data-filter="曹操"><span class="sw" style="background:var(--caocao)"></span>曹操 <span id="cnt-曹操"></span></button>
-<button class="filter-chip" data-filter="个人"><span class="sw" style="background:var(--personal)"></span>个人 <span id="cnt-个人"></span></button>
+<button class="filter-chip" data-filter="家庭"><span class="sw" style="background:var(--personal)"></span>家庭待办 <span id="cnt-家庭"></span></button>
 </div>
 <div class="stat-line" id="statLine"></div>
 </div>
@@ -214,29 +256,107 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 <div id="listArea"><div class="empty">加载中…</div></div>
 </div>
 
+<div id="page-kb" class="page" hidden>
+<header>
+<div>
+<h1>知识库</h1>
+<div class="subtitle">常用信息记录 · 逐行复制 / 文件上传下载</div>
+</div>
+<div class="header-right">
+<div class="sync-status"><span class="sync-dot"></span><span class="sync-label">已同步</span></div>
+</div>
+</header>
+
+<input type="search" class="kb-search" id="kbSearch" placeholder="搜索标题" autocomplete="off">
+
+<div class="filters">
+<div class="filter-chips" id="kbFilters">
+<button class="filter-chip" data-kb-filter="family"><span class="sw" style="background:var(--personal)"></span>家庭待办 <span id="kb-cnt-family"></span></button>
+<button class="filter-chip active" data-kb-filter="all"><span class="sw" style="background:var(--text-muted)"></span>全部 <span id="kb-cnt-all"></span></button>
+<button class="filter-chip" data-kb-filter="id"><span class="sw" style="background:var(--kb-id)"></span>证件号码 <span id="kb-cnt-id"></span></button>
+<button class="filter-chip" data-kb-filter="account"><span class="sw" style="background:var(--kb-account)"></span>账号密码 <span id="kb-cnt-account"></span></button>
+<button class="filter-chip" data-kb-filter="file"><span class="sw" style="background:var(--kb-file)"></span>文件 <span id="kb-cnt-file"></span></button>
+</div>
+</div>
+
+<div id="kbFamilyHint" class="kb-sync-hint" hidden>从『待办中枢』家庭待办实时同步 · 仅展示，不能在这里勾选或编辑</div>
+
+<div class="add-box" id="kbAddBox">
+<div class="add-row">
+<input type="text" id="kbTitle" placeholder="标题，例如：身份证 / 公司邮箱">
+<button class="primary" id="kbSaveBtn">保存</button>
+</div>
+<div class="entity-picker" id="kbCatPicker">
+<button class="entity-btn kb-cat active" data-cat="id">证件号码</button>
+<button class="entity-btn kb-cat" data-cat="account">账号密码</button>
+<button class="entity-btn kb-cat" data-cat="file">文件</button>
+</div>
+<div id="kbTextFields">
+<textarea id="kbNote" placeholder="多行备注（选填）" style="width:100%;min-height:72px;margin-bottom:8px;resize:vertical;"></textarea>
+<div class="kb-fields" id="kbFields"></div>
+<button type="button" class="ghost" id="kbAddField">添加一行内容</button>
+</div>
+<div id="kbFileFields" hidden>
+<div class="kb-file-pick">
+<button type="button" class="ghost" id="kbFileBtn">上传文件或照片</button>
+<input type="file" id="kbFileInput" accept="image/*,*/*" hidden>
+<span class="kb-file-meta" id="kbFileMeta">未选择文件 · 单文件不超过 1.5MB</span>
+</div>
+</div>
+</div>
+
+<div id="kbListArea"><div class="empty">加载中…</div></div>
+</div>
+</div>
+
+<nav class="bottom-nav" aria-label="主导航">
+<button class="nav-btn active" data-page="todos" id="navTodos">待办中枢</button>
+<button class="nav-btn" data-page="kb" id="navKb">知识库</button>
+</nav>
+
 <div id="modalRoot"></div>
 
 <script>
 const API = '/api/todos';
-const ENTITIES = ['Nexus','Meridian','曹操','个人'];
+const KB_API = '/api/todos?resource=kb';
+const ENTITIES = ['Nexus','Meridian','曹操','家庭'];
 const SOURCES = ['微信','钉钉','飞书','邮件','其他'];
+const KB_CATS = {
+id: { label:'证件号码', color:'var(--kb-id)' },
+account: { label:'账号密码', color:'var(--kb-account)' },
+file: { label:'文件', color:'var(--kb-file)' }
+};
+const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
 let todos = [];
 let currentFilter = 'all';
 let expandedId = null;
 let showAllDone = false;
 let selectedEntity = 'Nexus';
+let currentPage = 'todos';
+let kbItems = [];
+let kbFiles = {};
+let kbFilter = 'all';
+let kbSearch = '';
+let kbCat = 'id';
+let pendingKbFile = null;
 
 function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,7); }
+function kid(){ return 'k' + Date.now() + Math.random().toString(36).slice(2,7); }
 function todayStr(){ const d = new Date(); return fmt(d); }
 function fmt(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function normalizeEntity(e){ return e === '个人' ? '家庭' : e; }
+function isLocalHost(){ return location.protocol === 'file:' || ['localhost','127.0.0.1'].includes(location.hostname); }
 
 function setSync(state){
-const dot = document.getElementById('syncDot');
-const label = document.getElementById('syncLabel');
-if(state==='ok'){ dot.classList.remove('err'); label.textContent = '已同步'; }
-else if(state==='syncing'){ dot.classList.remove('err'); label.textContent = '同步中…'; }
-else { dot.classList.add('err'); label.textContent = '同步失败'; }
+document.querySelectorAll('.sync-dot').forEach(dot=>{
+if(state==='err') dot.classList.add('err'); else dot.classList.remove('err');
+});
+document.querySelectorAll('.sync-label').forEach(label=>{
+if(state==='ok') label.textContent = '已同步';
+else if(state==='syncing') label.textContent = '同步中…';
+else label.textContent = isLocalHost() ? '本机缓存' : '同步失败';
+});
 }
 
 async function loadTodos(){
@@ -244,16 +364,25 @@ setSync('syncing');
 try{
 const res = await fetch(API);
 if(!res.ok) throw new Error('load failed');
-todos = (await res.json()).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+todos = (await res.json()).map(t=>{
+if(t.entity==='个人'){ t.entity='家庭'; saveTodo(t); }
+return t;
+}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
 setSync('ok');
 }catch(e){
 setSync('err');
-todos = [];
+try{ todos = JSON.parse(localStorage.getItem('todos-cache')||'[]'); }
+catch(err){ todos = []; }
+todos = todos.map(t=>{ t.entity = normalizeEntity(t.entity); return t; });
 }
 render();
+if(currentPage==='kb') renderKb();
 }
 async function saveTodo(t){
+t.entity = normalizeEntity(t.entity);
 setSync('syncing');
+try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
 try{
 const res = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(t) });
 if(!res.ok) throw new Error('save failed');
@@ -269,8 +398,8 @@ function parseShorthand(raw, defaultSource){
 let text = raw;
 let entity = null, source = null, priority = null, due = null;
 
-const entityMatch = text.match(/@(Nexus|Meridian|曹操|个人)/);
-if(entityMatch){ entity = entityMatch[1]; text = text.replace(entityMatch[0],''); }
+const entityMatch = text.match(/@(Nexus|Meridian|曹操|家庭|个人)/);
+if(entityMatch){ entity = normalizeEntity(entityMatch[1]); text = text.replace(entityMatch[0],''); }
 
 const sourceMatch = text.match(/#(微信|钉钉|飞书|邮件|其他)/);
 if(sourceMatch){ source = sourceMatch[1]; text = text.replace(sourceMatch[0],''); }
@@ -343,6 +472,7 @@ render();
 function removeTodo(id, evt){
 if(evt) evt.stopPropagation();
 todos = todos.filter(x=>x.id!==id);
+try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
 deleteTodoStorage(id);
 render();
 }
@@ -353,9 +483,10 @@ render();
 function updateField(id, field, value){
 const t = todos.find(x=>x.id===id);
 if(!t) return;
-t[field] = value;
+t[field] = field === 'entity' ? normalizeEntity(value) : value;
 saveTodo(t);
 render();
+if(currentPage==='kb') renderKb();
 }
 
 function isOverdue(due){
@@ -393,13 +524,14 @@ return groups;
 function itemHtml(t){
 const overdue = !t.done && isOverdue(t.due);
 const expanded = expandedId === t.id;
-let html = `<div class="item entity-${t.entity} ${t.done?'done':''}">
+const entity = normalizeEntity(t.entity);
+let html = `<div class="item entity-${entity} ${t.done?'done':''}">
 <div class="item-row" onclick="toggleExpand('${t.id}')">
 <div class="checkbox ${t.done?'checked':''}" onclick="event.stopPropagation();toggleDone('${t.id}')"></div>
 <div class="item-body">
 <div class="item-text">${escapeHtml(t.text)}${t.note?'<span class="note-flag">·有备注</span>':''}</div>
 <div class="item-tags">
-<span class="tag">${t.entity}</span>
+<span class="tag">${entity}</span>
 <span class="tag">${t.platform}</span>
 <span class="tag priority-${t.priority}">${t.priority}</span>
 </div>
@@ -415,7 +547,7 @@ html += `<div class="item-detail">
 <textarea placeholder="上下文、对接人、群名...">${escapeHtml(t.note||'')}</textarea>
 <div class="detail-meta">
 <div class="fields">
-<select onchange="updateField('${t.id}','entity',this.value)">${ENTITIES.map(e=>`<option ${e===t.entity?'selected':''}>${e}</option>`).join('')}</select>
+<select onchange="updateField('${t.id}','entity',this.value)">${ENTITIES.map(e=>`<option ${e===normalizeEntity(t.entity)?'selected':''}>${e}</option>`).join('')}</select>
 <select onchange="updateField('${t.id}','platform',this.value)">${SOURCES.map(s=>`<option ${s===t.platform?'selected':''}>${s}</option>`).join('')}</select>
 <select onchange="updateField('${t.id}','priority',this.value)">${['高','中','低'].map(p=>`<option ${p===t.priority?'selected':''}>${p}</option>`).join('')}</select>
 <input type="date" value="${t.due||''}" onchange="updateField('${t.id}','due',this.value)">
@@ -435,7 +567,7 @@ function render(){
 updateFilterCounts();
 const area = document.getElementById('listArea');
 let filtered = todos;
-if(currentFilter !== 'all') filtered = todos.filter(t=>t.entity===currentFilter);
+if(currentFilter !== 'all') filtered = todos.filter(t=>normalizeEntity(t.entity)===currentFilter);
 
 const overdueTotal = todos.filter(t=>!t.done && isOverdue(t.due)).length;
 const todayTotal = todos.filter(t=>!t.done && t.due===todayStr()).length;
@@ -474,7 +606,7 @@ function updateFilterCounts(){
 document.getElementById('cnt-all').textContent = todos.filter(t=>!t.done).length || '';
 ENTITIES.forEach(e=>{
 const el = document.getElementById('cnt-'+e);
-if(el) el.textContent = todos.filter(t=>!t.done && t.entity===e).length || '';
+if(el) el.textContent = todos.filter(t=>!t.done && normalizeEntity(t.entity)===e).length || '';
 });
 }
 
@@ -584,7 +716,7 @@ function toggleParsed(i){ window.__parsedResults[i].checked = !window.__parsedRe
 function confirmParsed(){
 const results = (window.__parsedResults||[]).filter(r=>r.checked);
 results.forEach(r=>{
-const todo = { id: uid(), text: r.text, note:'', entity: r.entity || '个人', platform: r.source, priority: r.priority || '中', due: r.due || null, done:false, createdAt: Date.now(), completedAt:null };
+const todo = { id: uid(), text: r.text, note:'', entity: normalizeEntity(r.entity) || '家庭', platform: r.source, priority: r.priority || '中', due: r.due || null, done:false, createdAt: Date.now(), completedAt:null };
 todos.push(todo); saveTodo(todo);
 });
 closeModal();
@@ -605,9 +737,9 @@ const overdueActive = active.filter(t=>isOverdue(t.due));
 
 let rows = '';
 ENTITIES.forEach(e=>{
-const done = completedInRange.filter(t=>t.entity===e).length;
-const inbox = active.filter(t=>t.entity===e).length;
-const overdue = overdueActive.filter(t=>t.entity===e).length;
+const done = completedInRange.filter(t=>normalizeEntity(t.entity)===e).length;
+const inbox = active.filter(t=>normalizeEntity(t.entity)===e).length;
+const overdue = overdueActive.filter(t=>normalizeEntity(t.entity)===e).length;
 const color = e==='Nexus'?'var(--nexus)':e==='Meridian'?'var(--meridian)':e==='曹操'?'var(--caocao)':'var(--personal)';
 rows += `<tr><td><span style="width:9px;height:9px;border-radius:2px;background:${color};display:inline-block;"></span>${e}</td><td class="ok">${done}</td><td>${inbox}</td><td class="${overdue>0?'bad':''}">${overdue}</td></tr>`;
 });
@@ -633,7 +765,354 @@ document.addEventListener('click', (e)=>{
 if(e.target.id === 'pasteOverlay' || e.target.id === 'summaryOverlay') closeModal();
 });
 
-loadTodos();
+function persistKbCache(){
+try{
+localStorage.setItem('kb-cache', JSON.stringify(kbItems));
+localStorage.setItem('kb-files', JSON.stringify(kbFiles));
+}catch(e){}
+}
+function restoreKbCache(){
+try{ kbItems = JSON.parse(localStorage.getItem('kb-cache')||'[]'); }
+catch(e){ kbItems = []; }
+try{ kbFiles = JSON.parse(localStorage.getItem('kb-files')||'{}'); }
+catch(e){ kbFiles = {}; }
+}
+function formatSize(n){
+if(!n && n!==0) return '';
+if(n < 1024) return n + ' B';
+if(n < 1024*1024) return (n/1024).toFixed(n<10*1024?1:0) + ' KB';
+return (n/1024/1024).toFixed(1) + ' MB';
+}
+
+async function loadKb(){
+setSync('syncing');
+try{
+const res = await fetch(KB_API);
+if(!res.ok) throw new Error('load failed');
+kbItems = await res.json();
+persistKbCache();
+setSync('ok');
+}catch(e){
+setSync('err');
+restoreKbCache();
+}
+if(currentPage==='kb') renderKb();
+}
+async function saveKbItem(item){
+setSync('syncing');
+const { fileData, ...meta } = item;
+const stored = { ...meta, hasFile: item.category==='file' && !!(fileData || meta.hasFile) };
+const idx = kbItems.findIndex(x=>x.id===item.id);
+if(idx>=0) kbItems[idx] = stored; else kbItems.push(stored);
+if(fileData) kbFiles[item.id] = { fileData, fileName:item.fileName, fileMime:item.fileMime, fileSize:item.fileSize };
+persistKbCache();
+try{
+const res = await fetch(KB_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item) });
+if(!res.ok) throw new Error('save failed');
+setSync('ok');
+}catch(e){ setSync('err'); }
+}
+async function deleteKbItem(id){
+kbItems = kbItems.filter(x=>x.id!==id);
+delete kbFiles[id];
+persistKbCache();
+try{ await fetch(`${KB_API}&id=${encodeURIComponent(id)}`, { method:'DELETE' }); }catch(e){}
+renderKb();
+}
+
+function familyTodos(){
+return todos.filter(t=>normalizeEntity(t.entity)==='家庭');
+}
+
+function showPage(page){
+currentPage = page === 'kb' ? 'kb' : 'todos';
+document.getElementById('page-todos').hidden = currentPage !== 'todos';
+document.getElementById('page-kb').hidden = currentPage !== 'kb';
+document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.page===currentPage));
+if(location.hash !== '#'+currentPage) location.hash = currentPage;
+document.title = currentPage==='kb' ? '知识库 · 待办中枢' : '待办中枢';
+if(currentPage==='kb'){ renderKb(); loadKb(); }
+else { render(); loadTodos(); }
+}
+
+function addKbFieldRow(label='', value=''){
+const row = document.createElement('div');
+row.className = 'kb-field-row';
+row.innerHTML = `<input type="text" class="kb-field-label" placeholder="名称" value="${escapeHtml(label)}"><input type="text" class="kb-field-value" placeholder="内容" value="${escapeHtml(value)}"><button type="button" class="del-btn" title="删除此行">×</button>`;
+row.querySelector('.del-btn').addEventListener('click', ()=> row.remove());
+document.getElementById('kbFields').appendChild(row);
+}
+function resetKbForm(){
+document.getElementById('kbTitle').value = '';
+document.getElementById('kbNote').value = '';
+document.getElementById('kbFields').innerHTML = '';
+addKbFieldRow();
+addKbFieldRow();
+pendingKbFile = null;
+document.getElementById('kbFileInput').value = '';
+document.getElementById('kbFileMeta').textContent = '未选择文件 · 单文件不超过 1.5MB';
+}
+function setKbCat(cat){
+kbCat = cat;
+document.querySelectorAll('.kb-cat').forEach(b=> b.classList.toggle('active', b.dataset.cat===cat));
+document.getElementById('kbTextFields').hidden = cat==='file';
+document.getElementById('kbFileFields').hidden = cat!=='file';
+}
+function collectKbFields(){
+return [...document.querySelectorAll('#kbFields .kb-field-row')].map(row=>({
+label: row.querySelector('.kb-field-label').value.trim(),
+value: row.querySelector('.kb-field-value').value.trim()
+})).filter(f=>f.label || f.value);
+}
+
+async function saveKbFromForm(){
+const title = document.getElementById('kbTitle').value.trim();
+if(!title){ document.getElementById('kbTitle').focus(); return; }
+const item = {
+id: kid(),
+title,
+category: kbCat,
+note: kbCat==='file' ? '' : document.getElementById('kbNote').value,
+fields: kbCat==='file' ? [] : collectKbFields(),
+fileName: null,
+fileSize: null,
+fileMime: null,
+hasFile: false,
+createdAt: Date.now(),
+updatedAt: Date.now()
+};
+if(kbCat==='file'){
+if(!pendingKbFile){ alert('请先选择要上传的文件或照片'); return; }
+item.fileName = pendingKbFile.name;
+item.fileSize = pendingKbFile.size;
+item.fileMime = pendingKbFile.type || 'application/octet-stream';
+item.hasFile = true;
+item.fileData = pendingKbFile.data;
+}
+await saveKbItem(item);
+resetKbForm();
+renderKb();
+}
+
+function fileToBase64(file){
+return new Promise((resolve, reject)=>{
+const reader = new FileReader();
+reader.onload = ()=>{
+const r = String(reader.result||'');
+const i = r.indexOf(',');
+resolve(i>=0 ? r.slice(i+1) : r);
+};
+reader.onerror = ()=> reject(reader.error);
+reader.readAsDataURL(file);
+});
+}
+
+async function copyText(text, btn){
+try{
+if(navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+else {
+const ta = document.createElement('textarea');
+ta.value = text;
+document.body.appendChild(ta);
+ta.select();
+document.execCommand('copy');
+ta.remove();
+}
+if(btn){
+btn.classList.add('copied');
+btn.textContent = '已复制';
+setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent = '复制'; }, 2200);
+}
+}catch(e){ alert('复制失败'); }
+}
+
+async function downloadKbFile(id, fileName){
+let payload = kbFiles[id];
+if(!payload || !payload.fileData){
+try{
+const res = await fetch(`${API}?resource=kb-file&id=${encodeURIComponent(id)}`);
+if(!res.ok) throw new Error('not found');
+payload = await res.json();
+kbFiles[id] = payload;
+persistKbCache();
+}catch(e){
+alert('文件不在本机缓存，且云端下载失败。部署 KV 后重新上传即可跨设备下载。');
+return;
+}
+}
+try{
+const bin = atob(payload.fileData);
+const bytes = new Uint8Array(bin.length);
+for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+const blob = new Blob([bytes], { type: payload.fileMime || 'application/octet-stream' });
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = fileName || payload.fileName || 'download';
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(url);
+}catch(e){ alert('下载失败'); }
+}
+
+function kbCardHtml(item){
+const cat = KB_CATS[item.category] || KB_CATS.id;
+let body = '';
+if(item.note) body += `<div class="kb-note">${escapeHtml(item.note)}</div>`;
+(item.fields||[]).forEach((f,i)=>{
+body += `<div class="kb-kv"><div class="k">${escapeHtml(f.label||'内容')}</div><div class="v">${escapeHtml(f.value||'')}</div><button type="button" class="copy-btn" data-copy="${i}">复制</button></div>`;
+});
+if(item.category==='file'){
+body += `<div class="kb-file-row"><div class="kb-file-meta">${escapeHtml(item.fileName||'未命名文件')}${item.fileSize!=null?' · '+formatSize(item.fileSize):''}</div><button type="button" class="ghost" data-dl="${item.id}">下载</button></div>`;
+}
+return `<div class="kb-card cat-${item.category}" data-kid="${item.id}">
+<div class="kb-card-head">
+<div>
+<div class="kb-card-title">${escapeHtml(item.title)}</div>
+<div class="item-tags" style="margin-top:6px;"><span class="tag">${cat.label}</span></div>
+</div>
+<button type="button" class="del-btn" data-del="${item.id}" title="删除">×</button>
+</div>
+${body}
+</div>`;
+}
+
+function familyMirrorHtml(t){
+const entity = normalizeEntity(t.entity);
+const overdue = !t.done && isOverdue(t.due);
+return `<div class="item entity-${entity} readonly ${t.done?'done':''}">
+<div class="item-row">
+<div class="checkbox ${t.done?'checked':''}"></div>
+<div class="item-body">
+<div class="item-text">${escapeHtml(t.text)}${t.note?'<span class="note-flag">·有备注</span>':''}</div>
+<div class="item-tags">
+<span class="tag">${entity}</span>
+<span class="tag">${escapeHtml(t.platform||'')}</span>
+<span class="tag priority-${t.priority}">${escapeHtml(t.priority||'')}</span>
+${t.due?`<span class="tag ${overdue?'due-overdue':''}">${dueLabel(t.due)}${overdue?' · 逾期':''}</span>`:''}
+${t.done?'<span class="tag">已完成</span>':''}
+</div>
+</div>
+</div>
+</div>`;
+}
+
+function renderKb(){
+const q = kbSearch.trim().toLowerCase();
+document.getElementById('kbSearch').placeholder = kbFilter==='family' ? '搜索待办文案' : '搜索标题';
+document.getElementById('kbAddBox').hidden = kbFilter==='family';
+document.getElementById('kbFamilyHint').hidden = kbFilter!=='family';
+
+const fam = familyTodos();
+const kbCnt = {
+family: fam.length,
+all: kbItems.length,
+id: kbItems.filter(i=>i.category==='id').length,
+account: kbItems.filter(i=>i.category==='account').length,
+file: kbItems.filter(i=>i.category==='file').length
+};
+['family','all','id','account','file'].forEach(k=>{
+const el = document.getElementById('kb-cnt-'+k);
+if(el) el.textContent = kbCnt[k] || '';
+});
+
+const area = document.getElementById('kbListArea');
+if(kbFilter==='family'){
+let list = fam;
+if(q) list = list.filter(t=> (t.text||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q));
+if(list.length===0){
+area.innerHTML = q
+? '<div class="empty">没有匹配的家庭待办</div>'
+: '<div class="empty">还没有家庭待办 · 请到「待办中枢」添加</div>';
+return;
+}
+area.innerHTML = list.map(familyMirrorHtml).join('');
+return;
+}
+
+let list = kbFilter==='all' ? kbItems.slice() : kbItems.filter(i=>i.category===kbFilter);
+if(q) list = list.filter(i=> (i.title||'').toLowerCase().includes(q));
+list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+if(list.length===0){
+area.innerHTML = q
+? '<div class="empty">没有匹配的记录</div>'
+: '<div class="empty">还没有记录 · 上面填好后点保存</div>';
+return;
+}
+area.innerHTML = list.map(kbCardHtml).join('');
+area.querySelectorAll('.copy-btn').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+const card = btn.closest('.kb-card');
+const item = kbItems.find(x=>x.id===card.dataset.kid);
+const field = (item && item.fields || [])[Number(btn.dataset.copy)];
+copyText(field ? field.value : '', btn);
+});
+});
+area.querySelectorAll('[data-del]').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+if(confirm('删除这条记录？')) deleteKbItem(btn.dataset.del);
+});
+});
+area.querySelectorAll('[data-dl]').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+const item = kbItems.find(x=>x.id===btn.dataset.dl);
+downloadKbFile(btn.dataset.dl, item && item.fileName);
+});
+});
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+btn.addEventListener('click', ()=> showPage(btn.dataset.page));
+});
+document.querySelectorAll('#kbFilters .filter-chip').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+document.querySelectorAll('#kbFilters .filter-chip').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+kbFilter = btn.dataset.kbFilter;
+if(kbFilter==='id'||kbFilter==='account'||kbFilter==='file') setKbCat(kbFilter);
+renderKb();
+});
+});
+document.querySelectorAll('.kb-cat').forEach(btn=>{
+btn.addEventListener('click', ()=> setKbCat(btn.dataset.cat));
+});
+document.getElementById('kbAddField').addEventListener('click', ()=> addKbFieldRow());
+document.getElementById('kbSaveBtn').addEventListener('click', saveKbFromForm);
+document.getElementById('kbTitle').addEventListener('keydown', e=>{ if(e.key==='Enter') saveKbFromForm(); });
+document.getElementById('kbSearch').addEventListener('input', e=>{ kbSearch = e.target.value; renderKb(); });
+document.getElementById('kbFileBtn').addEventListener('click', ()=> document.getElementById('kbFileInput').click());
+document.getElementById('kbFileInput').addEventListener('change', async (e)=>{
+const file = e.target.files && e.target.files[0];
+if(!file){ pendingKbFile = null; return; }
+if(file.size > MAX_FILE_BYTES){
+alert('文件超过 1.5MB。知识库文件存在 KV 里，过大无法跨设备同步。');
+e.target.value = '';
+pendingKbFile = null;
+return;
+}
+try{
+const data = await fileToBase64(file);
+pendingKbFile = { name:file.name, size:file.size, type:file.type, data };
+document.getElementById('kbFileMeta').textContent = file.name + ' · ' + formatSize(file.size);
+}catch(err){
+alert('读取文件失败');
+pendingKbFile = null;
+}
+});
+window.addEventListener('hashchange', ()=>{
+const page = location.hash.replace('#','') === 'kb' ? 'kb' : 'todos';
+if(page !== currentPage) showPage(page);
+});
+
+resetKbForm();
+if(location.hash.replace('#','') === 'kb') currentPage = 'kb';
+document.getElementById('page-todos').hidden = currentPage !== 'todos';
+document.getElementById('page-kb').hidden = currentPage !== 'kb';
+document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.page===currentPage));
+if(currentPage==='kb') document.title = '知识库 · 待办中枢';
+
+Promise.all([loadTodos(), loadKb()]);
 </script>
 </body>
 </html>
