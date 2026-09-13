@@ -23,9 +23,9 @@
 --kb-account:#e2a23c;
 --kb-file:#b98cff;
 --danger:#ef5468;
---font-serif:'Noto Serif SC',serif;
---font-body:'Inter',sans-serif;
---font-mono:'IBM Plex Mono',monospace;
+--font-serif:'Noto Serif SC','Noto Serif CJK SC','WenQuanYi Micro Hei',serif;
+--font-body:'Inter','Noto Sans SC','WenQuanYi Micro Hei','Droid Sans Fallback',sans-serif;
+--font-mono:'IBM Plex Mono','WenQuanYi Micro Hei Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
@@ -76,11 +76,14 @@ button.ghost:hover{background:var(--surface-2);}
 
 .add-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px;}
 .add-row{display:flex;gap:8px;margin-bottom:10px;}
-input[type=text],input[type=date],textarea{
+input[type=text],input[type=date],input[type=search],textarea{
 background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
 color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px 12px;
+-webkit-appearance:none;appearance:none;
 }
-input[type=text]:focus,input[type=date]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
+input[type=search]::-webkit-search-decoration,
+input[type=search]::-webkit-search-cancel-button{display:none;}
+input[type=text]:focus,input[type=date]:focus,input[type=search]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
 #taskInput{flex:1;}
 .hint{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin:-4px 0 10px 2px;}
 .meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
@@ -169,14 +172,15 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 .leftover-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--border);}
 .leftover-item .d{color:var(--danger);font-family:var(--font-mono);font-size:11px;}
 
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(27,32,42,0.96);border-top:1px solid var(--border);display:flex;gap:6px;padding:8px 16px calc(10px + env(safe-area-inset-bottom));backdrop-filter:blur(10px);}
-.nav-btn{flex:1;background:transparent;border:1px solid transparent;color:var(--text-muted);border-radius:10px;padding:10px 12px;font-family:var(--font-body);font-size:13px;font-weight:500;cursor:pointer;}
-.nav-btn.active{background:var(--surface-2);color:var(--text);border-color:var(--border);}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:8px;padding:10px 16px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -10px 28px rgba(0,0,0,0.35);}
+.nav-btn{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);border-radius:10px;padding:11px 12px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{background:rgba(108,138,255,0.14);color:var(--nexus);border-color:rgba(108,138,255,0.45);}
 .page{display:block;}
 .page[hidden]{display:none!important;}
 
 .kb-search{width:100%;margin-bottom:12px;}
-.kb-sync-hint{border:1px dashed var(--border);border-radius:10px;padding:12px 14px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;margin-bottom:16px;line-height:1.65;background:rgba(202,166,61,0.06);}
+.kb-sync-hint{border:1px dashed var(--personal);border-radius:10px;padding:12px 14px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;margin-bottom:16px;line-height:1.65;background:rgba(202,166,61,0.08);}
 .kb-fields{margin:8px 0;}
 .kb-field-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
 .kb-field-row input:first-child{width:28%;min-width:88px;}
@@ -1018,7 +1022,9 @@ if(kbFilter==='family'){
 let list = fam;
 if(q) list = list.filter(t=> (t.text||'').toLowerCase().includes(q) || (t.note||'').toLowerCase().includes(q));
 if(list.length===0){
-area.innerHTML = '<div class="empty">还没有家庭待办 · 请到「待办中枢」添加</div>';
+area.innerHTML = q
+? '<div class="empty">没有匹配的家庭待办</div>'
+: '<div class="empty">还没有家庭待办 · 请到「待办中枢」添加</div>';
 return;
 }
 area.innerHTML = list.map(familyMirrorHtml).join('');
