@@ -921,7 +921,7 @@ ta.remove();
 if(btn){
 btn.classList.add('copied');
 btn.textContent = '已复制';
-setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent = '复制'; }, 1400);
+setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent = '复制'; }, 2200);
 }
 }catch(e){ alert('复制失败'); }
 }
@@ -1035,7 +1035,9 @@ let list = kbFilter==='all' ? kbItems.slice() : kbItems.filter(i=>i.category===k
 if(q) list = list.filter(i=> (i.title||'').toLowerCase().includes(q));
 list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
 if(list.length===0){
-area.innerHTML = '<div class="empty">还没有记录 · 上面填好后点保存</div>';
+area.innerHTML = q
+? '<div class="empty">没有匹配的记录</div>'
+: '<div class="empty">还没有记录 · 上面填好后点保存</div>';
 return;
 }
 area.innerHTML = list.map(kbCardHtml).join('');
@@ -1068,6 +1070,7 @@ btn.addEventListener('click', ()=>{
 document.querySelectorAll('#kbFilters .filter-chip').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
 kbFilter = btn.dataset.kbFilter;
+if(kbFilter==='id'||kbFilter==='account'||kbFilter==='file') setKbCat(kbFilter);
 renderKb();
 });
 });
