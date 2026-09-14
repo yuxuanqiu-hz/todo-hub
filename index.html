@@ -76,14 +76,14 @@ button.ghost:hover{background:var(--surface-2);}
 
 .add-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px;}
 .add-row{display:flex;gap:8px;margin-bottom:10px;}
-input[type=text],input[type=date],input[type=search],textarea{
+input[type=text],input[type=password],input[type=date],input[type=search],textarea{
 background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
 color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px 12px;
 -webkit-appearance:none;appearance:none;
 }
 input[type=search]::-webkit-search-decoration,
 input[type=search]::-webkit-search-cancel-button{display:none;}
-input[type=text]:focus,input[type=date]:focus,input[type=search]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
+input[type=text]:focus,input[type=password]:focus,input[type=date]:focus,input[type=search]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
 #taskInput{flex:1;}
 .hint{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin:-4px 0 10px 2px;}
 .meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
@@ -203,9 +203,33 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 .kb-file-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
 .item.readonly .item-row{cursor:default;}
 .item.readonly .checkbox{cursor:default;pointer-events:none;}
+body.is-locked{padding:0;}
+.login-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 16px;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 24px;max-width:400px;width:100%;}
+.login-card h1{margin-bottom:0;}
+.login-card .subtitle{margin-bottom:18px;}
+.login-card form{display:flex;flex-direction:column;gap:12px;}
+.login-card input[type=password]{width:100%;}
+.login-card button.primary{width:100%;padding:12px 18px;}
+.login-error{color:var(--danger);font-size:13px;line-height:1.45;}
+.login-hint{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-top:14px;line-height:1.65;}
+#appShell[hidden],#loginGate[hidden]{display:none!important;}
 </style>
 </head>
-<body>
+<body class="is-locked">
+<div id="loginGate" class="login-gate" aria-live="polite">
+<div class="login-card">
+<h1>待办中枢</h1>
+<div class="subtitle">输入站点密码后继续</div>
+<form id="loginForm">
+<input type="password" id="loginPassword" name="password" placeholder="站点密码" autocomplete="current-password" required>
+<button type="submit" class="primary" id="loginBtn">进入</button>
+</form>
+<p id="loginError" class="login-error" hidden></p>
+<p id="loginHint" class="login-hint"></p>
+</div>
+</div>
+<div id="appShell" hidden>
 <div class="wrap">
 <div id="page-todos" class="page">
 <header>
@@ -218,6 +242,7 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 <div class="header-actions">
 <button class="ghost" id="pasteBtn">粘贴拆解</button>
 <button class="ghost" id="summaryBtn">本周小结</button>
+<button class="ghost logout-btn" type="button">退出</button>
 </div>
 </div>
 </header>
@@ -264,6 +289,9 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 </div>
 <div class="header-right">
 <div class="sync-status"><span class="sync-dot"></span><span class="sync-label">已同步</span></div>
+<div class="header-actions">
+<button class="ghost logout-btn" type="button">退出</button>
+</div>
 </div>
 </header>
 
@@ -313,6 +341,7 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 <button class="nav-btn active" data-page="todos" id="navTodos">待办中枢</button>
 <button class="nav-btn" data-page="kb" id="navKb">知识库</button>
 </nav>
+</div>
 
 <div id="modalRoot"></div>
 
@@ -339,6 +368,8 @@ let kbFilter = 'all';
 let kbSearch = '';
 let kbCat = 'id';
 let pendingKbFile = null;
+let isAuthed = false;
+let authReason = '';
 
 function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,7); }
 function kid(){ return 'k' + Date.now() + Math.random().toString(36).slice(2,7); }
@@ -347,6 +378,140 @@ function fmt(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
 function normalizeEntity(e){ return e === '个人' ? '家庭' : e; }
 function isLocalHost(){ return location.protocol === 'file:' || ['localhost','127.0.0.1'].includes(location.hostname); }
+
+function clearLocalCaches(){
+try{
+localStorage.removeItem('todos-cache');
+localStorage.removeItem('kb-cache');
+localStorage.removeItem('kb-files');
+}catch(e){}
+}
+
+function showLoginError(msg){
+const el = document.getElementById('loginError');
+if(!msg){ el.hidden = true; el.textContent = ''; return; }
+el.hidden = false;
+el.textContent = msg;
+}
+
+function showLoginHint(reason){
+const hint = document.getElementById('loginHint');
+const form = document.getElementById('loginForm');
+if(reason === 'unconfigured'){
+form.hidden = true;
+showLoginError('站点未配置 SITE_PASSWORD，已拒绝访问。');
+hint.textContent = '在 Vercel → Settings → Environment Variables 为 Production / Preview 设置 SITE_PASSWORD（建议同时设置 SITE_SESSION_SECRET），保存后 Redeploy。本地请写进未提交的 .env.local，再用 node scripts/dev-server.js 打开。';
+return;
+}
+form.hidden = false;
+if(reason === 'unreachable'){
+hint.textContent = '登录接口连不上。本地不要只用静态服务器预览内容；请配置 SITE_PASSWORD 后运行 node scripts/dev-server.js，或在已部署环境打开。';
+return;
+}
+hint.textContent = '';
+}
+
+function showLoginGate(reason){
+isAuthed = false;
+authReason = reason || 'unauthorized';
+document.body.classList.add('is-locked');
+document.getElementById('loginGate').hidden = false;
+document.getElementById('appShell').hidden = true;
+document.getElementById('loginPassword').value = '';
+showLoginHint(authReason);
+if(authReason === 'unauthorized') showLoginError('');
+document.title = '登录 · 待办中枢';
+}
+
+function enterApp(){
+isAuthed = true;
+authReason = '';
+document.body.classList.remove('is-locked');
+document.getElementById('loginGate').hidden = true;
+document.getElementById('appShell').hidden = false;
+if(location.hash.replace('#','') === 'kb') currentPage = 'kb';
+document.getElementById('page-todos').hidden = currentPage !== 'todos';
+document.getElementById('page-kb').hidden = currentPage !== 'kb';
+document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.page===currentPage));
+document.title = currentPage==='kb' ? '知识库 · 待办中枢' : '待办中枢';
+if(currentPage==='kb'){ renderKb(); }
+else { render(); }
+Promise.all([loadTodos(), loadKb()]);
+}
+
+function handleUnauthorized(){
+if(!isAuthed && authReason === 'unconfigured') return;
+todos = [];
+kbItems = [];
+kbFiles = {};
+clearLocalCaches();
+const list = document.getElementById('listArea');
+const kbList = document.getElementById('kbListArea');
+if(list) list.innerHTML = '';
+if(kbList) kbList.innerHTML = '';
+showLoginGate('unauthorized');
+}
+
+async function apiFetch(url, options){
+const res = await fetch(url, Object.assign({ credentials:'include' }, options||{}));
+if(res.status === 401){
+handleUnauthorized();
+const err = new Error('unauthorized');
+err.status = 401;
+throw err;
+}
+if(res.status === 503){
+isAuthed = false;
+showLoginGate('unconfigured');
+const err = new Error('unconfigured');
+err.status = 503;
+throw err;
+}
+return res;
+}
+
+async function checkSession(){
+try{
+const res = await fetch('/api/auth', { credentials:'include' });
+if(res.ok) return { ok:true };
+if(res.status === 503) return { ok:false, reason:'unconfigured' };
+return { ok:false, reason:'unauthorized' };
+}catch(e){
+return { ok:false, reason:'unreachable' };
+}
+}
+
+async function submitLogin(evt){
+evt.preventDefault();
+const input = document.getElementById('loginPassword');
+const password = input.value;
+const btn = document.getElementById('loginBtn');
+if(!password){ input.focus(); return; }
+showLoginError('');
+btn.disabled = true;
+try{
+const res = await fetch('/api/auth', {
+method:'POST',
+credentials:'include',
+headers:{ 'Content-Type':'application/json' },
+body: JSON.stringify({ password })
+});
+if(res.status === 503){ input.value = ''; showLoginGate('unconfigured'); return; }
+if(!res.ok){ showLoginError('密码不对'); return; }
+input.value = '';
+enterApp();
+}catch(e){
+showLoginError('登录失败，请稍后重试');
+showLoginHint('unreachable');
+}finally{
+btn.disabled = false;
+}
+}
+
+async function logout(){
+try{ await fetch('/api/auth', { method:'DELETE', credentials:'include' }); }catch(e){}
+handleUnauthorized();
+}
 
 function setSync(state){
 document.querySelectorAll('.sync-dot').forEach(dot=>{
@@ -360,37 +525,46 @@ else label.textContent = isLocalHost() ? '本机缓存' : '同步失败';
 }
 
 async function loadTodos(){
+if(!isAuthed) return;
 setSync('syncing');
 try{
-const res = await fetch(API);
+const res = await apiFetch(API);
 if(!res.ok) throw new Error('load failed');
 todos = (await res.json()).map(t=>{
 if(t.entity==='个人'){ t.entity='家庭'; saveTodo(t); }
 return t;
 }).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
+persistTodosCache();
 setSync('ok');
 }catch(e){
+if(e.status === 401 || e.status === 503) return;
 setSync('err');
+if(!isAuthed) return;
 try{ todos = JSON.parse(localStorage.getItem('todos-cache')||'[]'); }
 catch(err){ todos = []; }
 todos = todos.map(t=>{ t.entity = normalizeEntity(t.entity); return t; });
 }
+if(!isAuthed) return;
 render();
 if(currentPage==='kb') renderKb();
 }
 async function saveTodo(t){
+if(!isAuthed) return;
 t.entity = normalizeEntity(t.entity);
 setSync('syncing');
-try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
+persistTodosCache();
 try{
-const res = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(t) });
+const res = await apiFetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(t) });
 if(!res.ok) throw new Error('save failed');
 setSync('ok');
-}catch(e){ setSync('err'); }
+}catch(e){
+if(e.status === 401 || e.status === 503) return;
+setSync('err');
+}
 }
 async function deleteTodoStorage(id){
-try{ await fetch(`${API}?id=${encodeURIComponent(id)}`, { method:'DELETE' }); }catch(e){}
+if(!isAuthed) return;
+try{ await apiFetch(`${API}?id=${encodeURIComponent(id)}`, { method:'DELETE' }); }catch(e){}
 }
 
 // ---- shorthand parser: @entity #source !priority + date keywords ----
@@ -472,7 +646,7 @@ render();
 function removeTodo(id, evt){
 if(evt) evt.stopPropagation();
 todos = todos.filter(x=>x.id!==id);
-try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
+persistTodosCache();
 deleteTodoStorage(id);
 render();
 }
@@ -765,7 +939,12 @@ document.addEventListener('click', (e)=>{
 if(e.target.id === 'pasteOverlay' || e.target.id === 'summaryOverlay') closeModal();
 });
 
+function persistTodosCache(){
+if(!isAuthed) return;
+try{ localStorage.setItem('todos-cache', JSON.stringify(todos)); }catch(e){}
+}
 function persistKbCache(){
+if(!isAuthed) return;
 try{
 localStorage.setItem('kb-cache', JSON.stringify(kbItems));
 localStorage.setItem('kb-files', JSON.stringify(kbFiles));
@@ -785,20 +964,25 @@ return (n/1024/1024).toFixed(1) + ' MB';
 }
 
 async function loadKb(){
+if(!isAuthed) return;
 setSync('syncing');
 try{
-const res = await fetch(KB_API);
+const res = await apiFetch(KB_API);
 if(!res.ok) throw new Error('load failed');
 kbItems = await res.json();
 persistKbCache();
 setSync('ok');
 }catch(e){
+if(e.status === 401 || e.status === 503) return;
 setSync('err');
+if(!isAuthed) return;
 restoreKbCache();
 }
+if(!isAuthed) return;
 if(currentPage==='kb') renderKb();
 }
 async function saveKbItem(item){
+if(!isAuthed) return;
 setSync('syncing');
 const { fileData, ...meta } = item;
 const stored = { ...meta, hasFile: item.category==='file' && !!(fileData || meta.hasFile) };
@@ -807,17 +991,21 @@ if(idx>=0) kbItems[idx] = stored; else kbItems.push(stored);
 if(fileData) kbFiles[item.id] = { fileData, fileName:item.fileName, fileMime:item.fileMime, fileSize:item.fileSize };
 persistKbCache();
 try{
-const res = await fetch(KB_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item) });
+const res = await apiFetch(KB_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item) });
 if(!res.ok) throw new Error('save failed');
 setSync('ok');
-}catch(e){ setSync('err'); }
+}catch(e){
+if(e.status === 401 || e.status === 503) return;
+setSync('err');
+}
 }
 async function deleteKbItem(id){
+if(!isAuthed) return;
 kbItems = kbItems.filter(x=>x.id!==id);
 delete kbFiles[id];
 persistKbCache();
-try{ await fetch(`${KB_API}&id=${encodeURIComponent(id)}`, { method:'DELETE' }); }catch(e){}
-renderKb();
+try{ await apiFetch(`${KB_API}&id=${encodeURIComponent(id)}`, { method:'DELETE' }); }catch(e){}
+if(isAuthed) renderKb();
 }
 
 function familyTodos(){
@@ -825,6 +1013,7 @@ return todos.filter(t=>normalizeEntity(t.entity)==='家庭');
 }
 
 function showPage(page){
+if(!isAuthed) return;
 currentPage = page === 'kb' ? 'kb' : 'todos';
 document.getElementById('page-todos').hidden = currentPage !== 'todos';
 document.getElementById('page-kb').hidden = currentPage !== 'kb';
@@ -930,12 +1119,13 @@ async function downloadKbFile(id, fileName){
 let payload = kbFiles[id];
 if(!payload || !payload.fileData){
 try{
-const res = await fetch(`${API}?resource=kb-file&id=${encodeURIComponent(id)}`);
+const res = await apiFetch(`${API}?resource=kb-file&id=${encodeURIComponent(id)}`);
 if(!res.ok) throw new Error('not found');
 payload = await res.json();
 kbFiles[id] = payload;
 persistKbCache();
 }catch(e){
+if(e.status === 401 || e.status === 503) return;
 alert('文件不在本机缓存，且云端下载失败。部署 KV 后重新上传即可跨设备下载。');
 return;
 }
@@ -1106,13 +1296,18 @@ if(page !== currentPage) showPage(page);
 });
 
 resetKbForm();
-if(location.hash.replace('#','') === 'kb') currentPage = 'kb';
-document.getElementById('page-todos').hidden = currentPage !== 'todos';
-document.getElementById('page-kb').hidden = currentPage !== 'kb';
-document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.page===currentPage));
-if(currentPage==='kb') document.title = '知识库 · 待办中枢';
+document.getElementById('loginForm').addEventListener('submit', submitLogin);
+document.querySelectorAll('.logout-btn').forEach(btn=> btn.addEventListener('click', logout));
+document.getElementById('listArea').innerHTML = '';
+document.getElementById('kbListArea').innerHTML = '';
 
-Promise.all([loadTodos(), loadKb()]);
+checkSession().then((s)=>{
+if(s.ok) enterApp();
+else {
+if(s.reason === 'unauthorized' || s.reason === 'unconfigured') clearLocalCaches();
+showLoginGate(s.reason);
+}
+});
 </script>
 </body>
 </html>
