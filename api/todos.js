@@ -4,6 +4,8 @@
 // 如果你连接后变量名不一样，去 Vercel 项目 Settings -> Environment Variables 里核对，
 // 改成下面这两个名字，或者把下面两行改成实际的变量名。
 
+const { requireSession } = require('../lib/session');
+
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 
@@ -186,6 +188,8 @@ async function handleKbFile(req, res) {
 }
 
 module.exports = async function handler(req, res) {
+  if (!requireSession(req, res)) return;
+
   if (!KV_URL || !KV_TOKEN) {
     res.status(500).json({
       error: '缺少 KV_REST_API_URL / KV_REST_API_TOKEN 环境变量，先在 Vercel 项目里连接一个 KV 存储',

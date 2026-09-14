@@ -2,12 +2,17 @@
 
 ## 目录结构
 ```
-index.html      前端页面（待办中枢 + 知识库，纯静态，无需构建）
-api/todos.js    Vercel Serverless Function，读写云端 KV（待办与知识库）
-package.json    让 Vercel 识别为 Node 项目
+index.html           前端（待办中枢 + 知识库 + 登录页，纯静态，无需构建）
+api/auth.js          登录 / 会话检查 / 退出
+api/todos.js         读写云端 KV（待办与知识库）；无有效会话返回 401
+lib/session.js       密码校验与签名会话 cookie
+scripts/dev-server.js 本地联调（静态页 + API）
+package.json         让 Vercel 识别为 Node 项目
 ```
 
 底部导航在「待办中枢」和「知识库」之间切换。待办能力保持原样；原「个人」主体已更名为「家庭」，旧数据里 `entity: "个人"` 会在读取/写入时兼容并迁移为 `"家庭"`。
+
+全站用**单一站点密码**保护（一人使用，无多用户账号）。未登录看不到待办 / 知识库内容，也不能调用读写 API。登录后会话写在 HttpOnly cookie 里，刷新仍保持登录；可退出。密码不要写进仓库或前端。
 
 ## 知识库
 - 分类：证件号码、账号密码、文件；支持标题搜索、逐行复制、删除。
@@ -21,7 +26,7 @@ package.json    让 Vercel 识别为 Node 项目
 - KV 单 value、Vercel Hobby 请求体（约 4.5MB）都不适合放大文件。
 - 列表接口只回元数据；下载走 `GET /api/todos?resource=kb-file&id=`。
 - 不适合视频、安装包等大文件；证件扫描件、截图、小 PDF 可以。
-- 知识库与待办一样明文存储、无登录保护，请勿放极敏感原件。
+- 数据在 KV 里仍是明文。密码门只挡未登录访问，**不是**加密存储。
 
 ## 部署步骤
 
@@ -38,22 +43,55 @@ Vercel 控制台 -> Add New -> Project -> 选这个仓库 -> 直接 Deploy（不
 
 连接完 KV 后需要重新部署一次（Deployments 页面点 Redeploy），让新的环境变量生效。
 
-### 4. 绑定你自己的域名
+### 4. 设置站点密码（必做，否则全站拒绝访问）
+Vercel 项目 -> **Settings -> Environment Variables**，新增：
+
+| 名称 | 必填 | 说明 |
+| --- | --- | --- |
+| `SITE_PASSWORD` | 是 | 站点登录密码。不要写进仓库、前端或提交说明。 |
+| `SITE_SESSION_SECRET` | 强烈建议 | 用来给会话 cookie 做 HMAC 签名。用足够长的随机串，例如 `openssl rand -hex 32`。 |
+
+勾选 **Production** 和 **Preview**（本地 `vercel dev` 再勾 Development）。保存后必须 **Redeploy**，否则线上还是旧环境变量。
+
+未设置 `SITE_PASSWORD` 时，登录和数据接口都会拒绝访问（503），不会回退成公开站点。
+
+未设置 `SITE_SESSION_SECRET` 时，服务会从 `SITE_PASSWORD` 派生签名密钥，方便先跑起来。**风险**：密码一旦泄露，攻击者也能伪造会话；改密码会换掉派生密钥。请尽快补上独立 secret。
+
+会话 cookie：`HttpOnly`、生产 / Vercel 环境带 `Secure`、`SameSite=Lax`，默认约 **14 天**。改 `SITE_PASSWORD` 会使已有会话失效。不要把密码存进 `localStorage`。
+
+### 5. 绑定你自己的域名
 项目 -> Settings -> Domains -> 输入你的域名 -> 按提示去你的域名服务商那边加一条 DNS 记录（通常是 CNAME 或 A 记录）-> 生效后就能用你自己的域名访问了。
 
-### 5. 完工
-之后用你的域名在任何浏览器打开都行，包括微信、钉钉的内置浏览器。数据存在 Vercel 的 KV 里，所有设备打开同一个域名看到的是同一份。
+### 6. 完工
+之后用你的域名在任何浏览器打开都行，包括微信、钉钉的内置浏览器。先输入站点密码；数据存在 Vercel 的 KV 里，所有设备打开同一个域名看到的是同一份。
 
 ## 本地验证
-没有 KV 时，前端会回退到 `localStorage`（同步状态显示「本机缓存」），方便看界面和家庭待办镜像，但**不会跨设备同步**。
+
+**不要**只用 `python3 -m http.server` 预览内容：没有 API 就无法登录，页面会停在登录 / 配置提示，这是故意的。
+
+在仓库根目录建**未提交**的 `.env.local`（已被 `.gitignore` 忽略）：
+
+```bash
+SITE_PASSWORD=换成你自己的密码
+SITE_SESSION_SECRET=换成足够长的随机串
+```
+
+不要把真实密码写进 README、PR 或命令行 history 演示。
 
 ```bash
 # 在仓库根目录
-python3 -m http.server 4173
+npm test
+npm run dev
 # 浏览器打开 http://127.0.0.1:4173
 ```
 
-完整云端同步请用 `vercel dev`（需已连接 KV）或部署后再测。
+建议按这个顺序自测（可用任意本地密码，不要把真实生产密码打进日志或截图）：
 
-## 后续想加的功能
-- 目前谁都能访问这个域名就能读写数据，没有登录保护。如果不想公开，可以在 api/todos.js 里加一个简单的口令校验，或者用 Vercel 的密码保护功能（Pro 版）。
+1. 不配 `SITE_PASSWORD` 启动时，页面提示未配置，`GET /api/todos` 返回 503。
+2. 配好后再开：未登录只看到登录页；直接请求 `/api/todos`、`/api/todos?resource=kb`、`/api/todos?resource=kb-file` 均为 401。
+3. 错密码无法进入。
+4. 正确密码进入应用；刷新后仍是登录态。
+5. 点「退出」回到登录页，再请求 API 为 401。
+6. 有 KV 时，登录后待办 / 知识库跨设备同步与原来一致。
+
+完整云端同步仍可用 `vercel dev`（需已连接 KV）或部署后再测。
