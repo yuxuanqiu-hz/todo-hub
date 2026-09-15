@@ -33,7 +33,7 @@ background:var(--bg);
 color:var(--text);
 font-family:var(--font-body);
 min-height:100vh;
-padding:28px 16px 90px;
+padding:28px 16px 108px;
 -webkit-font-smoothing:antialiased;
 }
 .wrap{max-width:760px;margin:0 auto;}
@@ -1835,10 +1835,10 @@ if(sanitized.error){ setTradeFormError(sanitized.error); return; }
 const next = trades.filter(t=>t.id!==sanitized.trade.id).concat(sanitized.trade);
 const check = computeTradePositions(next, tradeMarks);
 if(check.errors.length){ setTradeFormError(check.errors[0].error); return; }
-const ok = await saveTradeRecord(sanitized.trade);
-if(!ok) return;
 resetTradeForm();
+const ok = await saveTradeRecord(sanitized.trade);
 renderTrades();
+if(!ok) return;
 }
 function startEditTrade(id){
 const t = trades.find(x=>x.id===id);
