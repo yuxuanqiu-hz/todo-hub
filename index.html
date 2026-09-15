@@ -33,7 +33,7 @@ background:var(--bg);
 color:var(--text);
 font-family:var(--font-body);
 min-height:100vh;
-padding:28px 16px 90px;
+padding:28px 16px 108px;
 -webkit-font-smoothing:antialiased;
 }
 .wrap{max-width:760px;margin:0 auto;}
@@ -76,14 +76,18 @@ button.ghost:hover{background:var(--surface-2);}
 
 .add-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:20px;}
 .add-row{display:flex;gap:8px;margin-bottom:10px;}
-input[type=text],input[type=password],input[type=date],input[type=search],textarea{
+input[type=text],input[type=password],input[type=date],input[type=search],input[type=number],input[type=datetime-local],textarea{
 background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
 color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px 12px;
 -webkit-appearance:none;appearance:none;
 }
+input[type=number]{-moz-appearance:textfield;appearance:textfield;color-scheme:dark;}
+input[type=datetime-local],input[type=date]{color-scheme:dark;font-family:var(--font-mono);font-size:12px;}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 input[type=search]::-webkit-search-decoration,
 input[type=search]::-webkit-search-cancel-button{display:none;}
-input[type=text]:focus,input[type=password]:focus,input[type=date]:focus,input[type=search]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
+input[type=text]:focus,input[type=password]:focus,input[type=date]:focus,input[type=search]:focus,input[type=number]:focus,input[type=datetime-local]:focus,select:focus,textarea:focus{outline:2px solid var(--nexus);outline-offset:1px;}
 #taskInput{flex:1;}
 .hint{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin:-4px 0 10px 2px;}
 .meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
@@ -214,6 +218,57 @@ body.is-locked{padding:0;}
 .login-error{color:var(--danger);font-size:13px;line-height:1.45;}
 .login-hint{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-top:14px;line-height:1.65;}
 #appShell[hidden],#loginGate[hidden]{display:none!important;}
+
+.trade-mkt.active[data-market="A"]{background:rgba(108,138,255,0.15);border-color:var(--nexus);color:var(--nexus);}
+.trade-mkt.active[data-market="HK"]{background:rgba(202,166,61,0.15);border-color:var(--personal);color:var(--personal);}
+.trade-mkt.active[data-market="US"]{background:rgba(43,184,143,0.15);border-color:var(--meridian);color:var(--meridian);}
+.trade-side.active[data-side="buy"]{background:rgba(239,84,104,0.15);border-color:var(--danger);color:var(--danger);}
+.trade-side.active[data-side="sell"]{background:rgba(43,184,143,0.15);border-color:var(--meridian);color:var(--meridian);}
+.trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.trade-grid .span-2{grid-column:1 / -1;}
+.trade-field{display:flex;flex-direction:column;gap:4px;}
+.trade-field input,.trade-field textarea{width:100%;}
+.trade-field textarea{min-height:56px;resize:vertical;margin-bottom:0;}
+.trade-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.trade-form-error{color:var(--danger);font-size:13px;line-height:1.45;margin:8px 0 0;}
+.currency-block{margin-bottom:20px;}
+.currency-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.currency-title{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase;}
+.currency-stats{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);line-height:1.6;text-align:right;}
+.pos-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--nexus);border-radius:10px;margin-bottom:8px;padding:14px;}
+.pos-card.mkt-A{border-left-color:var(--nexus);}
+.pos-card.mkt-HK{border-left-color:var(--personal);}
+.pos-card.mkt-US{border-left-color:var(--meridian);}
+.pos-card.closed{opacity:0.78;}
+.pos-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.pos-symbol{font-size:15px;font-weight:600;}
+.pos-name{color:var(--text-muted);font-weight:500;font-size:13px;margin-left:6px;}
+.pos-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;font-size:13px;}
+.pos-metrics .k{font-family:var(--font-mono);font-size:10.5px;color:var(--text-muted);margin-bottom:2px;}
+.pos-mark{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.pos-mark input{width:120px;padding:7px 10px;}
+.pnl-pos{color:var(--meridian);}
+.pnl-neg{color:var(--danger);}
+.trade-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--nexus);border-radius:10px;margin-bottom:8px;overflow:hidden;}
+.trade-item.mkt-A{border-left-color:var(--nexus);}
+.trade-item.mkt-HK{border-left-color:var(--personal);}
+.trade-item.mkt-US{border-left-color:var(--meridian);}
+.trade-item.sell{border-left-style:dashed;}
+.trade-row{padding:12px 14px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.side-buy{color:var(--danger);font-family:var(--font-mono);font-size:12px;font-weight:600;width:36px;flex:none;padding-top:2px;}
+.side-sell{color:var(--meridian);font-family:var(--font-mono);font-size:12px;font-weight:600;width:36px;flex:none;padding-top:2px;}
+.trade-main{flex:1;min-width:0;}
+.trade-title{font-size:14.5px;line-height:1.4;}
+.trade-amt{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);white-space:nowrap;padding-top:2px;}
+.section-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.section-tab{font-family:var(--font-mono);font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;}
+.section-tab.active{background:var(--surface-2);color:var(--text);border-color:var(--text-dim);}
+@media (max-width:560px){
+.trade-grid{grid-template-columns:1fr;}
+.trade-grid .span-2{grid-column:auto;}
+.pos-metrics{grid-template-columns:1fr;}
+.currency-stats{text-align:left;}
+}
 </style>
 </head>
 <body class="is-locked">
@@ -335,11 +390,102 @@ body.is-locked{padding:0;}
 
 <div id="kbListArea"><div class="empty">加载中…</div></div>
 </div>
+
+<div id="page-trades" class="page" hidden>
+<header>
+<div>
+<h1>交易</h1>
+<div class="subtitle">股票买卖流水 · 成交价自填 · 无实时行情</div>
+</div>
+<div class="header-right">
+<div class="sync-status"><span class="sync-dot"></span><span class="sync-label">已同步</span></div>
+<div class="header-actions">
+<button class="ghost logout-btn" type="button">退出</button>
+</div>
+</div>
+</header>
+
+<div class="section-tabs" id="tradeSectionTabs">
+<button type="button" class="section-tab active" data-trade-section="ledger">流水</button>
+<button type="button" class="section-tab" data-trade-section="positions">持仓</button>
+</div>
+
+<div id="tradeLedgerSection">
+<div class="add-box" id="tradeAddBox">
+<div class="entity-picker" id="tradeMarketPicker">
+<button type="button" class="entity-btn trade-mkt active" data-market="A">A股 · CNY</button>
+<button type="button" class="entity-btn trade-mkt" data-market="HK">港股 · HKD</button>
+<button type="button" class="entity-btn trade-mkt" data-market="US">美股 · USD</button>
+</div>
+<div class="entity-picker" id="tradeSidePicker">
+<button type="button" class="entity-btn trade-side active" data-side="buy">买入</button>
+<button type="button" class="entity-btn trade-side" data-side="sell">卖出</button>
+</div>
+<div class="trade-grid">
+<div class="trade-field">
+<div class="field-label">代码</div>
+<input type="text" id="tradeSymbol" placeholder="600519" autocomplete="off">
+</div>
+<div class="trade-field">
+<div class="field-label">名称（可选）</div>
+<input type="text" id="tradeName" placeholder="贵州茅台" autocomplete="off">
+</div>
+<div class="trade-field">
+<div class="field-label">成交价</div>
+<input type="number" id="tradePrice" min="0" step="any" placeholder="0.00">
+</div>
+<div class="trade-field">
+<div class="field-label">数量</div>
+<input type="number" id="tradeQty" min="0" step="any" placeholder="100">
+</div>
+<div class="trade-field span-2">
+<div class="field-label">成交时间</div>
+<input type="datetime-local" id="tradeTime">
+</div>
+<div class="trade-field">
+<div class="field-label">手续费</div>
+<input type="number" id="tradeFee" min="0" step="any" value="0">
+</div>
+<div class="trade-field">
+<div class="field-label">税费 / 其他费用</div>
+<input type="number" id="tradeTax" min="0" step="any" value="0">
+</div>
+<div class="trade-field span-2">
+<div class="field-label">备注</div>
+<textarea id="tradeNote" placeholder="账户、策略、拆合股等（选填）"></textarea>
+</div>
+</div>
+<div class="hint">价格以本次成交价为准，不拉行情。卖出按成交时间顺序校验，数量不能超过当时持仓。成本用移动加权平均，买入费用计入成本，卖出费用从已实现盈亏扣除。各市场按 CNY / HKD / USD 分开汇总。</div>
+<div class="trade-actions">
+<button type="button" class="primary" id="tradeSaveBtn">记一笔</button>
+<button type="button" class="ghost" id="tradeCancelEdit" hidden>取消编辑</button>
+</div>
+<p id="tradeFormError" class="trade-form-error" hidden></p>
+</div>
+
+<div class="filters">
+<div class="filter-chips" id="tradeFilters">
+<button class="filter-chip active" data-trade-filter="all"><span class="sw" style="background:var(--text-muted)"></span>全部</button>
+<button class="filter-chip" data-trade-filter="A"><span class="sw" style="background:var(--nexus)"></span>A股</button>
+<button class="filter-chip" data-trade-filter="HK"><span class="sw" style="background:var(--personal)"></span>港股</button>
+<button class="filter-chip" data-trade-filter="US"><span class="sw" style="background:var(--meridian)"></span>美股</button>
+</div>
+</div>
+<input type="search" class="kb-search" id="tradeSearch" placeholder="搜索代码或名称" autocomplete="off">
+<div id="tradeListArea"><div class="empty">加载中…</div></div>
+</div>
+
+<div id="tradePositionSection" hidden>
+<div class="hint" style="margin:0 0 14px 2px;">持仓由流水汇总。未实现盈亏仅在手填「现价」后计算，不请求外部行情。不同币种不会加总成一个数。</div>
+<div id="tradePositionArea"><div class="empty">加载中…</div></div>
+</div>
+</div>
 </div>
 
 <nav class="bottom-nav" aria-label="主导航">
 <button class="nav-btn active" data-page="todos" id="navTodos">待办中枢</button>
 <button class="nav-btn" data-page="kb" id="navKb">知识库</button>
+<button class="nav-btn" data-page="trades" id="navTrades">交易</button>
 </nav>
 </div>
 
@@ -348,6 +494,15 @@ body.is-locked{padding:0;}
 <script>
 const API = '/api/todos';
 const KB_API = '/api/todos?resource=kb';
+const TRADE_API = '/api/todos?resource=trades';
+const TRADE_MARKS_API = '/api/todos?resource=trade-marks';
+const TRADE_MARKETS = {
+A: { label:'A股', currency:'CNY', currencyLabel:'人民币', symbolPh:'600519', namePh:'贵州茅台' },
+HK: { label:'港股', currency:'HKD', currencyLabel:'港币', symbolPh:'00700', namePh:'腾讯控股' },
+US: { label:'美股', currency:'USD', currencyLabel:'美元', symbolPh:'AAPL', namePh:'Apple' }
+};
+const TRADE_QTY_EPS = 1e-8;
+const MONEY_PREFIX = { CNY:'¥', HKD:'HK$', USD:'US$' };
 const ENTITIES = ['Nexus','Meridian','曹操','家庭'];
 const SOURCES = ['微信','钉钉','飞书','邮件','其他'];
 const KB_CATS = {
@@ -370,9 +525,29 @@ let kbCat = 'id';
 let pendingKbFile = null;
 let isAuthed = false;
 let authReason = '';
+let trades = [];
+let tradeMarks = {};
+let tradeMarket = 'A';
+let tradeSide = 'buy';
+let tradeFilter = 'all';
+let tradeSearch = '';
+let tradeSection = 'ledger';
+let editingTradeId = null;
 
 function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,7); }
 function kid(){ return 'k' + Date.now() + Math.random().toString(36).slice(2,7); }
+function tid(){ return 'tr' + Date.now() + Math.random().toString(36).slice(2,7); }
+function parsePageHash(){
+const h = location.hash.replace('#','');
+if(h === 'kb') return 'kb';
+if(h === 'trades' || h === 'trade') return 'trades';
+return 'todos';
+}
+function pageTitle(page){
+if(page === 'kb') return '知识库 · 待办中枢';
+if(page === 'trades') return '交易 · 待办中枢';
+return '待办中枢';
+}
 function todayStr(){ const d = new Date(); return fmt(d); }
 function fmt(d){ const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
@@ -384,6 +559,8 @@ try{
 localStorage.removeItem('todos-cache');
 localStorage.removeItem('kb-cache');
 localStorage.removeItem('kb-files');
+localStorage.removeItem('trades-cache');
+localStorage.removeItem('trade-marks-cache');
 }catch(e){}
 }
 
@@ -429,14 +606,16 @@ authReason = '';
 document.body.classList.remove('is-locked');
 document.getElementById('loginGate').hidden = true;
 document.getElementById('appShell').hidden = false;
-if(location.hash.replace('#','') === 'kb') currentPage = 'kb';
+currentPage = parsePageHash();
 document.getElementById('page-todos').hidden = currentPage !== 'todos';
 document.getElementById('page-kb').hidden = currentPage !== 'kb';
+document.getElementById('page-trades').hidden = currentPage !== 'trades';
 document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.page===currentPage));
-document.title = currentPage==='kb' ? '知识库 · 待办中枢' : '待办中枢';
-if(currentPage==='kb'){ renderKb(); }
-else { render(); }
-Promise.all([loadTodos(), loadKb()]);
+document.title = pageTitle(currentPage);
+if(currentPage==='kb') renderKb();
+else if(currentPage==='trades') renderTrades();
+else render();
+Promise.all([loadTodos(), loadKb(), loadTrades()]);
 }
 
 function handleUnauthorized(){
@@ -444,11 +623,18 @@ if(!isAuthed && authReason === 'unconfigured') return;
 todos = [];
 kbItems = [];
 kbFiles = {};
+trades = [];
+tradeMarks = {};
+editingTradeId = null;
 clearLocalCaches();
 const list = document.getElementById('listArea');
 const kbList = document.getElementById('kbListArea');
+const tradeList = document.getElementById('tradeListArea');
+const tradePos = document.getElementById('tradePositionArea');
 if(list) list.innerHTML = '';
 if(kbList) kbList.innerHTML = '';
+if(tradeList) tradeList.innerHTML = '';
+if(tradePos) tradePos.innerHTML = '';
 showLoginGate('unauthorized');
 }
 
@@ -786,17 +972,17 @@ if(el) el.textContent = todos.filter(t=>!t.done && normalizeEntity(t.entity)===e
 
 document.getElementById('addBtn').addEventListener('click', addTodo);
 document.getElementById('taskInput').addEventListener('keydown', e=>{ if(e.key==='Enter') addTodo(); });
-document.querySelectorAll('.filter-chip').forEach(btn=>{
+document.querySelectorAll('#filters .filter-chip').forEach(btn=>{
 btn.addEventListener('click', ()=>{
-document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
+document.querySelectorAll('#filters .filter-chip').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
 currentFilter = btn.dataset.filter;
 render();
 });
 });
-document.querySelectorAll('.entity-btn').forEach(btn=>{
+document.querySelectorAll('#entityPicker .entity-btn').forEach(btn=>{
 btn.addEventListener('click', ()=>{
-document.querySelectorAll('.entity-btn').forEach(b=>b.classList.remove('active'));
+document.querySelectorAll('#entityPicker .entity-btn').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
 selectedEntity = btn.dataset.entity;
 });
@@ -1014,13 +1200,15 @@ return todos.filter(t=>normalizeEntity(t.entity)==='家庭');
 
 function showPage(page){
 if(!isAuthed) return;
-currentPage = page === 'kb' ? 'kb' : 'todos';
+currentPage = (page === 'kb' || page === 'trades') ? page : 'todos';
 document.getElementById('page-todos').hidden = currentPage !== 'todos';
 document.getElementById('page-kb').hidden = currentPage !== 'kb';
+document.getElementById('page-trades').hidden = currentPage !== 'trades';
 document.querySelectorAll('.nav-btn').forEach(b=> b.classList.toggle('active', b.dataset.page===currentPage));
 if(location.hash !== '#'+currentPage) location.hash = currentPage;
-document.title = currentPage==='kb' ? '知识库 · 待办中枢' : '待办中枢';
+document.title = pageTitle(currentPage);
 if(currentPage==='kb'){ renderKb(); loadKb(); }
+else if(currentPage==='trades'){ renderTrades(); loadTrades(); }
 else { render(); loadTodos(); }
 }
 
@@ -1291,15 +1479,509 @@ pendingKbFile = null;
 }
 });
 window.addEventListener('hashchange', ()=>{
-const page = location.hash.replace('#','') === 'kb' ? 'kb' : 'todos';
+const page = parsePageHash();
 if(page !== currentPage) showPage(page);
 });
 
+function persistTradesCache(){
+if(!isAuthed) return;
+try{
+localStorage.setItem('trades-cache', JSON.stringify(trades));
+localStorage.setItem('trade-marks-cache', JSON.stringify(tradeMarks));
+}catch(e){}
+}
+function restoreTradesCache(){
+try{ trades = JSON.parse(localStorage.getItem('trades-cache')||'[]'); }
+catch(e){ trades = []; }
+try{ tradeMarks = JSON.parse(localStorage.getItem('trade-marks-cache')||'{}'); }
+catch(e){ tradeMarks = {}; }
+}
+function tradeRoundQty(n){ return Math.round((Number(n)||0)*1e8)/1e8; }
+function tradeRoundMoney(n){ return Math.round((Number(n)||0)*1e8)/1e8; }
+function tradeZeroQty(n){ return Math.abs(Number(n)||0) < TRADE_QTY_EPS; }
+function tradeToNumber(v, fallback){
+if(v==='' || v==null) return fallback;
+const n = Number(v);
+return Number.isFinite(n) ? n : fallback;
+}
+function normalizeTradeSymbol(market, symbol){
+const raw = String(symbol||'').trim().toUpperCase();
+if(!raw) return '';
+if(market==='A'){
+const digits = raw.replace(/\D/g,'');
+return digits ? digits.padStart(6,'0').slice(-6) : raw;
+}
+if(market==='HK'){
+const digits = raw.replace(/\D/g,'');
+return digits ? digits.padStart(5,'0').slice(-5) : raw;
+}
+return raw;
+}
+function formatTradeQty(n){
+if(tradeZeroQty(n)) return '0';
+if(Math.abs(n-Math.round(n)) < TRADE_QTY_EPS) return String(Math.round(n));
+return String(tradeRoundQty(n)).replace(/\.?0+$/,'');
+}
+function formatMoney(n, currency){
+if(!Number.isFinite(n)) return '—';
+const sign = n<0 ? '-' : '';
+const abs = Math.abs(n).toLocaleString('zh-CN', { minimumFractionDigits:2, maximumFractionDigits:2 });
+return sign + (MONEY_PREFIX[currency]||'') + abs;
+}
+function formatPct(x){
+if(x==null || !Number.isFinite(x)) return '—';
+const pct = x*100;
+return (pct>0?'+':'') + pct.toFixed(2) + '%';
+}
+function pnlClass(n){
+if(!Number.isFinite(n) || Math.abs(n)<0.005) return '';
+return n>0 ? 'pnl-pos' : 'pnl-neg';
+}
+function signedMoney(n, currency){
+if(!Number.isFinite(n)) return '—';
+const formatted = formatMoney(n, currency);
+if(n>0) return '+'+formatted;
+return formatted;
+}
+function toDatetimeLocalValue(ms){
+const d = new Date(ms);
+if(!Number.isFinite(d.getTime())) return '';
+const p = n => String(n).padStart(2,'0');
+return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function fromDatetimeLocalValue(s){
+const t = new Date(s).getTime();
+return Number.isFinite(t) ? t : Date.now();
+}
+function sortTradesChrono(list){
+return (list||[]).slice().sort((a,b)=>{
+if((a.tradedAt||0)!==(b.tradedAt||0)) return (a.tradedAt||0)-(b.tradedAt||0);
+if((a.createdAt||0)!==(b.createdAt||0)) return (a.createdAt||0)-(b.createdAt||0);
+return String(a.id||'').localeCompare(String(b.id||''));
+});
+}
+function computeTradePositions(list, marks){
+const byKey = {};
+const errors = [];
+for(const t of sortTradesChrono(list)){
+const market = String(t.market||'').toUpperCase();
+if(!TRADE_MARKETS[market]) continue;
+const symbol = normalizeTradeSymbol(market, t.symbol);
+if(!symbol) continue;
+const key = market+':'+symbol;
+if(!byKey[key]){
+byKey[key] = { key, market, symbol, name:'', qty:0, avgCost:0, totalCost:0, realizedPnl:0 };
+}
+const pos = byKey[key];
+if(t.name) pos.name = String(t.name).trim();
+const qty = tradeRoundQty(t.qty);
+const price = tradeToNumber(t.price, 0);
+const fees = tradeToNumber(t.fee,0) + tradeToNumber(t.tax,0);
+const side = String(t.side||'').toLowerCase();
+if(side==='buy'){
+const costAdd = tradeRoundMoney(qty*price + fees);
+const newQty = pos.qty + qty;
+pos.totalCost = tradeRoundMoney(pos.totalCost + costAdd);
+pos.qty = newQty;
+pos.avgCost = newQty>0 ? pos.totalCost/newQty : 0;
+continue;
+}
+if(side!=='sell') continue;
+if(qty - pos.qty > TRADE_QTY_EPS){
+errors.push({ tradeId:t.id, error:`卖出数量超过持仓：${symbol} 拟卖出 ${formatTradeQty(qty)}，当时持仓仅 ${formatTradeQty(pos.qty)}` });
+continue;
+}
+const sellCost = tradeRoundMoney(pos.avgCost * qty);
+pos.realizedPnl = tradeRoundMoney(pos.realizedPnl + qty*price - sellCost - fees);
+pos.qty = tradeRoundQty(pos.qty - qty);
+if(tradeZeroQty(pos.qty)){ pos.qty = 0; pos.totalCost = 0; }
+else pos.totalCost = tradeRoundMoney(pos.qty * pos.avgCost);
+}
+const positions = Object.values(byKey).map(pos=>{
+const mark = tradeToNumber((marks||{})[pos.key], NaN);
+const hasMark = Number.isFinite(mark) && mark>0 && pos.qty>0;
+const unrealizedPnl = hasMark ? tradeRoundMoney((mark - pos.avgCost)*pos.qty) : null;
+return {
+...pos,
+currency: TRADE_MARKETS[pos.market].currency,
+marketLabel: TRADE_MARKETS[pos.market].label,
+markPrice: hasMark ? mark : null,
+unrealizedPnl,
+holdingReturn: unrealizedPnl!=null && pos.totalCost>0 ? unrealizedPnl/pos.totalCost : null
+};
+});
+return { positions, errors };
+}
+function summarizeTradeCurrency(positions){
+const groups = {
+CNY:{ openCost:0, realizedPnl:0, unrealizedPnl:0, hasUnrealized:false, missingMarks:false, openCount:0, closedCount:0 },
+HKD:{ openCost:0, realizedPnl:0, unrealizedPnl:0, hasUnrealized:false, missingMarks:false, openCount:0, closedCount:0 },
+USD:{ openCost:0, realizedPnl:0, unrealizedPnl:0, hasUnrealized:false, missingMarks:false, openCount:0, closedCount:0 }
+};
+(positions||[]).forEach(pos=>{
+const g = groups[pos.currency];
+if(!g) return;
+g.realizedPnl += pos.realizedPnl;
+if(pos.qty>0){
+g.openCost += pos.totalCost;
+g.openCount += 1;
+if(pos.unrealizedPnl!=null){ g.unrealizedPnl += pos.unrealizedPnl; g.hasUnrealized = true; }
+else g.missingMarks = true;
+} else g.closedCount += 1;
+});
+return groups;
+}
+function setTradeFormError(msg){
+const el = document.getElementById('tradeFormError');
+if(!msg){ el.hidden = true; el.textContent = ''; return; }
+el.hidden = false;
+el.textContent = msg;
+}
+function setTradeMarket(market){
+tradeMarket = TRADE_MARKETS[market] ? market : 'A';
+document.querySelectorAll('.trade-mkt').forEach(b=> b.classList.toggle('active', b.dataset.market===tradeMarket));
+const meta = TRADE_MARKETS[tradeMarket];
+document.getElementById('tradeSymbol').placeholder = meta.symbolPh;
+document.getElementById('tradeName').placeholder = meta.namePh;
+}
+function setTradeSide(side){
+tradeSide = side==='sell' ? 'sell' : 'buy';
+document.querySelectorAll('.trade-side').forEach(b=> b.classList.toggle('active', b.dataset.side===tradeSide));
+}
+function setTradeSection(section){
+tradeSection = section==='positions' ? 'positions' : 'ledger';
+document.querySelectorAll('#tradeSectionTabs .section-tab').forEach(b=> b.classList.toggle('active', b.dataset.tradeSection===tradeSection));
+document.getElementById('tradeLedgerSection').hidden = tradeSection!=='ledger';
+document.getElementById('tradePositionSection').hidden = tradeSection!=='positions';
+}
+function resetTradeForm(){
+editingTradeId = null;
+setTradeMarket(tradeMarket);
+setTradeSide('buy');
+document.getElementById('tradeSymbol').value = '';
+document.getElementById('tradeName').value = '';
+document.getElementById('tradePrice').value = '';
+document.getElementById('tradeQty').value = '';
+document.getElementById('tradeFee').value = '0';
+document.getElementById('tradeTax').value = '0';
+document.getElementById('tradeNote').value = '';
+document.getElementById('tradeTime').value = toDatetimeLocalValue(Date.now());
+document.getElementById('tradeSaveBtn').textContent = '记一笔';
+document.getElementById('tradeCancelEdit').hidden = true;
+setTradeFormError('');
+}
+function fillTradeForm(t){
+editingTradeId = t.id;
+setTradeMarket(t.market);
+setTradeSide(t.side);
+document.getElementById('tradeSymbol').value = t.symbol || '';
+document.getElementById('tradeName').value = t.name || '';
+document.getElementById('tradePrice').value = t.price;
+document.getElementById('tradeQty').value = t.qty;
+document.getElementById('tradeFee').value = t.fee || 0;
+document.getElementById('tradeTax').value = t.tax || 0;
+document.getElementById('tradeNote').value = t.note || '';
+document.getElementById('tradeTime').value = toDatetimeLocalValue(t.tradedAt || Date.now());
+document.getElementById('tradeSaveBtn').textContent = '保存修改';
+document.getElementById('tradeCancelEdit').hidden = false;
+setTradeFormError('');
+setTradeSection('ledger');
+document.getElementById('tradeAddBox').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function readTradeForm(){
+const existing = editingTradeId ? trades.find(x=>x.id===editingTradeId) : null;
+return {
+id: editingTradeId || tid(),
+market: tradeMarket,
+symbol: document.getElementById('tradeSymbol').value,
+name: document.getElementById('tradeName').value,
+side: tradeSide,
+price: document.getElementById('tradePrice').value,
+qty: document.getElementById('tradeQty').value,
+tradedAt: fromDatetimeLocalValue(document.getElementById('tradeTime').value),
+fee: document.getElementById('tradeFee').value,
+tax: document.getElementById('tradeTax').value,
+note: document.getElementById('tradeNote').value,
+createdAt: existing ? existing.createdAt : Date.now(),
+updatedAt: Date.now()
+};
+}
+function sanitizeTradeClient(input){
+const market = String(input.market||'').toUpperCase();
+if(!TRADE_MARKETS[market]) return { error:'市场必须是 A股、港股或美股' };
+const symbol = normalizeTradeSymbol(market, input.symbol);
+if(!symbol) return { error:'请填写股票代码' };
+const side = String(input.side||'').toLowerCase();
+if(side!=='buy' && side!=='sell') return { error:'方向必须是买入或卖出' };
+const price = tradeToNumber(input.price, NaN);
+if(!Number.isFinite(price) || price<=0) return { error:'成交价必须大于 0' };
+const qty = tradeToNumber(input.qty, NaN);
+if(!Number.isFinite(qty) || qty<=0) return { error:'数量必须大于 0' };
+const fee = tradeToNumber(input.fee, 0);
+const tax = tradeToNumber(input.tax, 0);
+if(fee<0) return { error:'手续费不能为负数' };
+if(tax<0) return { error:'税费不能为负数' };
+const tradedAt = tradeToNumber(input.tradedAt, NaN);
+if(!Number.isFinite(tradedAt) || tradedAt<=0) return { error:'请填写成交时间' };
+if(!input.id) return { error:'missing id' };
+return { trade:{
+id: String(input.id),
+market, symbol, name: String(input.name||'').trim(), side, price,
+qty: tradeRoundQty(qty), tradedAt, fee, tax, note: String(input.note||'').trim(),
+createdAt: tradeToNumber(input.createdAt, Date.now()),
+updatedAt: Date.now()
+}};
+}
+
+async function loadTrades(){
+if(!isAuthed) return;
+setSync('syncing');
+try{
+const [tradeRes, markRes] = await Promise.all([
+apiFetch(TRADE_API),
+apiFetch(TRADE_MARKS_API)
+]);
+if(!tradeRes.ok) throw new Error('load failed');
+trades = await tradeRes.json();
+if(markRes.ok) tradeMarks = await markRes.json();
+persistTradesCache();
+setSync('ok');
+}catch(e){
+if(e.status === 401 || e.status === 503) return;
+setSync('err');
+if(!isAuthed) return;
+restoreTradesCache();
+}
+if(!isAuthed) return;
+if(currentPage==='trades') renderTrades();
+}
+async function saveTradeRecord(trade){
+if(!isAuthed) return false;
+setSync('syncing');
+const prev = trades.slice();
+const idx = trades.findIndex(x=>x.id===trade.id);
+if(idx>=0) trades[idx] = trade; else trades.push(trade);
+persistTradesCache();
+try{
+const res = await apiFetch(TRADE_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(trade) });
+if(res.status === 400){
+const body = await res.json().catch(()=>({}));
+trades = prev;
+persistTradesCache();
+setTradeFormError(body.error || '保存失败');
+setSync('ok');
+return false;
+}
+if(!res.ok) throw new Error('save failed');
+const body = await res.json().catch(()=>null);
+if(body && body.trade){
+const i = trades.findIndex(x=>x.id===body.trade.id);
+if(i>=0) trades[i] = body.trade;
+}
+persistTradesCache();
+setSync('ok');
+return true;
+}catch(e){
+if(e.status === 401 || e.status === 503) return false;
+setSync('err');
+return true;
+}
+}
+async function deleteTradeRecord(id){
+if(!isAuthed) return false;
+const prev = trades.slice();
+const check = computeTradePositions(trades.filter(t=>t.id!==id), tradeMarks);
+if(check.errors.length){
+alert('删除后持仓将变为负数（'+check.errors[0].error+'）。请先删除或修改相关卖出记录。');
+return false;
+}
+trades = trades.filter(x=>x.id!==id);
+persistTradesCache();
+try{
+const res = await apiFetch(`${TRADE_API}&id=${encodeURIComponent(id)}`, { method:'DELETE' });
+if(res.status === 400){
+const body = await res.json().catch(()=>({}));
+trades = prev;
+persistTradesCache();
+alert(body.error || '无法删除');
+return false;
+}
+setSync('ok');
+return true;
+}catch(e){
+if(e.status === 401 || e.status === 503) return false;
+setSync('err');
+return true;
+}
+}
+async function saveTradeMarks(){
+if(!isAuthed) return;
+persistTradesCache();
+setSync('syncing');
+try{
+const res = await apiFetch(TRADE_MARKS_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(tradeMarks) });
+if(!res.ok) throw new Error('save marks failed');
+setSync('ok');
+}catch(e){
+if(e.status === 401 || e.status === 503) return;
+setSync('err');
+}
+}
+
+async function submitTradeForm(){
+const raw = readTradeForm();
+const sanitized = sanitizeTradeClient(raw);
+if(sanitized.error){ setTradeFormError(sanitized.error); return; }
+const next = trades.filter(t=>t.id!==sanitized.trade.id).concat(sanitized.trade);
+const check = computeTradePositions(next, tradeMarks);
+if(check.errors.length){ setTradeFormError(check.errors[0].error); return; }
+resetTradeForm();
+const ok = await saveTradeRecord(sanitized.trade);
+renderTrades();
+if(!ok) return;
+}
+function startEditTrade(id){
+const t = trades.find(x=>x.id===id);
+if(!t) return;
+fillTradeForm(t);
+}
+async function confirmDeleteTrade(id){
+if(!confirm('删除这条买卖流水？删除后会按剩余流水重算持仓。')) return;
+const ok = await deleteTradeRecord(id);
+if(!ok) return;
+if(editingTradeId===id) resetTradeForm();
+renderTrades();
+}
+async function updateMarkPrice(key, value){
+const n = Number(value);
+if(Number.isFinite(n) && n>0) tradeMarks[key] = n;
+else delete tradeMarks[key];
+await saveTradeMarks();
+renderTrades();
+}
+
+function tradeItemHtml(t){
+const market = TRADE_MARKETS[t.market] || TRADE_MARKETS.A;
+const sideLabel = t.side==='sell' ? '卖' : '买';
+const when = t.tradedAt ? new Date(t.tradedAt).toLocaleString('zh-CN', { hour12:false }) : '';
+const fees = tradeToNumber(t.fee,0) + tradeToNumber(t.tax,0);
+const notional = tradeToNumber(t.price,0) * tradeToNumber(t.qty,0);
+return `<div class="trade-item mkt-${t.market} ${t.side==='sell'?'sell':''}">
+<div class="trade-row">
+<div class="${t.side==='sell'?'side-sell':'side-buy'}">${sideLabel}</div>
+<div class="trade-main">
+<div class="trade-title">${escapeHtml(t.symbol)}${t.name? ' · '+escapeHtml(t.name):''}</div>
+<div class="item-tags">
+<span class="tag">${market.label}</span>
+<span class="tag">${formatTradeQty(t.qty)} × ${escapeHtml(String(t.price))}</span>
+${fees?`<span class="tag">费用 ${formatMoney(fees, market.currency)}</span>`:''}
+${t.note?`<span class="tag">${escapeHtml(t.note)}</span>`:''}
+<span class="tag">${escapeHtml(when)}</span>
+</div>
+</div>
+<div class="trade-amt">${formatMoney(notional, market.currency)}</div>
+<button type="button" class="link-btn" data-edit-trade="${t.id}">编辑</button>
+<button type="button" class="del-btn" data-del-trade="${t.id}" title="删除">×</button>
+</div>
+</div>`;
+}
+function posCardHtml(pos){
+const closed = pos.qty<=0;
+const unreal = pos.unrealizedPnl;
+return `<div class="pos-card mkt-${pos.market} ${closed?'closed':''}">
+<div class="pos-head">
+<div>
+<div class="pos-symbol">${escapeHtml(pos.symbol)}${pos.name?`<span class="pos-name">${escapeHtml(pos.name)}</span>`:''}</div>
+<div class="item-tags" style="margin-top:6px;"><span class="tag">${pos.marketLabel}</span>${closed?'<span class="tag">已清仓</span>':''}</div>
+</div>
+</div>
+<div class="pos-metrics">
+<div><div class="k">数量</div>${formatTradeQty(pos.qty)}</div>
+<div><div class="k">成本均价</div>${closed?'—':formatMoney(pos.avgCost, pos.currency)}</div>
+<div><div class="k">持仓总成本</div>${formatMoney(pos.totalCost, pos.currency)}</div>
+<div><div class="k">已实现盈亏</div><span class="${pnlClass(pos.realizedPnl)}">${signedMoney(pos.realizedPnl, pos.currency)}</span></div>
+<div><div class="k">未实现盈亏</div>${unreal==null?'<span class="tag">填现价后计算</span>':`<span class="${pnlClass(unreal)}">${signedMoney(unreal, pos.currency)}</span>`}</div>
+<div><div class="k">持仓收益率</div>${pos.holdingReturn==null?'—':`<span class="${pnlClass(pos.holdingReturn)}">${formatPct(pos.holdingReturn)}</span>`}</div>
+</div>
+${closed?'':`<div class="pos-mark"><span class="field-label" style="margin:0;">现价（自填）</span><input type="number" min="0" step="any" inputmode="decimal" data-mark-key="${pos.key}" value="${pos.markPrice!=null?pos.markPrice:''}" placeholder="不拉行情"></div>`}
+</div>`;
+}
+
+function renderTrades(){
+const { positions } = computeTradePositions(trades, tradeMarks);
+const area = document.getElementById('tradeListArea');
+const posArea = document.getElementById('tradePositionArea');
+const q = tradeSearch.trim().toLowerCase();
+let list = trades.slice().sort((a,b)=>(b.tradedAt||0)-(a.tradedAt||0) || (b.createdAt||0)-(a.createdAt||0));
+if(tradeFilter!=='all') list = list.filter(t=>t.market===tradeFilter);
+if(q) list = list.filter(t=> (t.symbol||'').toLowerCase().includes(q) || (t.name||'').toLowerCase().includes(q));
+if(list.length===0){
+area.innerHTML = q || tradeFilter!=='all'
+? '<div class="empty">没有匹配的流水</div>'
+: '<div class="empty">还没有交易记录 · 上面记一笔买卖</div>';
+} else {
+area.innerHTML = list.map(tradeItemHtml).join('');
+area.querySelectorAll('[data-edit-trade]').forEach(btn=> btn.addEventListener('click', ()=> startEditTrade(btn.dataset.editTrade)));
+area.querySelectorAll('[data-del-trade]').forEach(btn=> btn.addEventListener('click', ()=> confirmDeleteTrade(btn.dataset.delTrade)));
+}
+
+if(positions.length===0){
+posArea.innerHTML = '<div class="empty">还没有持仓 · 先在流水里记买入</div>';
+return;
+}
+const sums = summarizeTradeCurrency(positions);
+const order = [
+['CNY','人民币','A'],
+['HKD','港币','HK'],
+['USD','美元','US']
+];
+let html = '';
+order.forEach(([ccy, label, mkt])=>{
+const g = sums[ccy];
+const rows = positions.filter(p=>p.currency===ccy);
+if(rows.length===0) return;
+const unrealText = g.hasUnrealized
+? `${signedMoney(g.unrealizedPnl, ccy)}${g.missingMarks?' · 部分持仓未填现价':''}`
+: (g.missingMarks ? '未填现价' : '—');
+html += `<div class="currency-block">
+<div class="currency-head">
+<div class="currency-title">${label} · ${ccy} · ${TRADE_MARKETS[mkt].label}</div>
+<div class="currency-stats">持仓成本 <b>${formatMoney(g.openCost, ccy)}</b><br>已实现盈亏 <b class="${pnlClass(g.realizedPnl)}">${signedMoney(g.realizedPnl, ccy)}</b><br>未实现盈亏 <b class="${g.hasUnrealized?pnlClass(g.unrealizedPnl):''}">${unrealText}</b></div>
+</div>
+${rows.map(posCardHtml).join('')}
+</div>`;
+});
+posArea.innerHTML = html;
+posArea.querySelectorAll('[data-mark-key]').forEach(input=>{
+const save = ()=> updateMarkPrice(input.dataset.markKey, input.value);
+input.addEventListener('change', save);
+input.addEventListener('blur', save);
+});
+}
+
 resetKbForm();
+resetTradeForm();
 document.getElementById('loginForm').addEventListener('submit', submitLogin);
 document.querySelectorAll('.logout-btn').forEach(btn=> btn.addEventListener('click', logout));
 document.getElementById('listArea').innerHTML = '';
 document.getElementById('kbListArea').innerHTML = '';
+document.getElementById('tradeListArea').innerHTML = '';
+document.getElementById('tradePositionArea').innerHTML = '';
+document.querySelectorAll('.trade-mkt').forEach(btn=> btn.addEventListener('click', ()=> setTradeMarket(btn.dataset.market)));
+document.querySelectorAll('.trade-side').forEach(btn=> btn.addEventListener('click', ()=> setTradeSide(btn.dataset.side)));
+document.querySelectorAll('#tradeSectionTabs .section-tab').forEach(btn=> btn.addEventListener('click', ()=> setTradeSection(btn.dataset.tradeSection)));
+document.querySelectorAll('#tradeFilters .filter-chip').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+document.querySelectorAll('#tradeFilters .filter-chip').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+tradeFilter = btn.dataset.tradeFilter;
+renderTrades();
+});
+});
+document.getElementById('tradeSaveBtn').addEventListener('click', submitTradeForm);
+document.getElementById('tradeCancelEdit').addEventListener('click', ()=> resetTradeForm());
+document.getElementById('tradeSearch').addEventListener('input', e=>{ tradeSearch = e.target.value; renderTrades(); });
+document.getElementById('tradeSymbol').addEventListener('keydown', e=>{ if(e.key==='Enter') submitTradeForm(); });
 
 checkSession().then((s)=>{
 if(s.ok) enterApp();

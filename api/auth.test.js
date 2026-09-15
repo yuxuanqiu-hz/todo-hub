@@ -80,10 +80,23 @@ test('auth login sets cookie; status and protected APIs accept it', async () => 
   await todos({ method: 'GET', headers: {}, query: {} }, blockedTodos);
   assert.equal(blockedTodos.statusCode, 401);
 
+  const blockedTrades = mockRes();
+  await todos({ method: 'GET', headers: {}, query: { resource: 'trades' } }, blockedTrades);
+  assert.equal(blockedTrades.statusCode, 401);
+
+  const blockedMarks = mockRes();
+  await todos({ method: 'POST', headers: {}, query: { resource: 'trade-marks' }, body: {} }, blockedMarks);
+  assert.equal(blockedMarks.statusCode, 401);
+
   const allowedTodos = mockRes();
   await todos({ method: 'GET', headers: { cookie: cookiePair }, query: { resource: 'kb' } }, allowedTodos);
   assert.notEqual(allowedTodos.statusCode, 401);
   assert.equal(allowedTodos.body.error !== 'unauthorized', true);
+
+  const allowedTrades = mockRes();
+  await todos({ method: 'GET', headers: { cookie: cookiePair }, query: { resource: 'trades' } }, allowedTrades);
+  assert.notEqual(allowedTrades.statusCode, 401);
+  assert.equal(allowedTrades.body.error !== 'unauthorized', true);
 
   const logout = mockRes();
   await auth({ method: 'DELETE', headers: { cookie: cookiePair } }, logout);

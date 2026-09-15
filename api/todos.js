@@ -5,6 +5,11 @@
 // 改成下面这两个名字，或者把下面两行改成实际的变量名。
 
 const { requireSession } = require('../lib/session');
+const {
+  deleteAndValidate,
+  sanitizeMarks,
+  upsertAndValidate,
+} = require('../lib/trades');
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -187,6 +192,70 @@ async function handleKbFile(req, res) {
   res.status(200).json(stored);
 }
 
+async function loadAllTrades() {
+  const ids = (await kv(['smembers', 'trade:ids'])) || [];
+  if (ids.length === 0) return [];
+  const values = await Promise.all(ids.map((id) => kv(['get', `trade:${id}`])));
+  return values.map(parseStored).filter(Boolean);
+}
+
+async function handleTrades(req, res) {
+  if (req.method === 'GET') {
+    res.status(200).json(await loadAllTrades());
+    return;
+  }
+
+  if (req.method === 'POST') {
+    const existing = await loadAllTrades();
+    const result = upsertAndValidate(existing, req.body);
+    if (!result.ok) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    await kv(['set', `trade:${result.trade.id}`, JSON.stringify(result.trade)]);
+    await kv(['sadd', 'trade:ids', result.trade.id]);
+    res.status(200).json({ ok: true, trade: result.trade });
+    return;
+  }
+
+  if (req.method === 'DELETE') {
+    const id = req.query.id;
+    if (!id) {
+      res.status(400).json({ error: 'missing id' });
+      return;
+    }
+    const existing = await loadAllTrades();
+    const result = deleteAndValidate(existing, id);
+    if (!result.ok) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    await kv(['del', `trade:${id}`]);
+    await kv(['srem', 'trade:ids', id]);
+    res.status(200).json({ ok: true });
+    return;
+  }
+
+  res.status(405).json({ error: 'method not allowed' });
+}
+
+async function handleTradeMarks(req, res) {
+  if (req.method === 'GET') {
+    const marks = parseStored(await kv(['get', 'trade:marks'])) || {};
+    res.status(200).json(sanitizeMarks(marks));
+    return;
+  }
+
+  if (req.method === 'POST') {
+    const marks = sanitizeMarks(req.body);
+    await kv(['set', 'trade:marks', JSON.stringify(marks)]);
+    res.status(200).json({ ok: true, marks });
+    return;
+  }
+
+  res.status(405).json({ error: 'method not allowed' });
+}
+
 module.exports = async function handler(req, res) {
   if (!requireSession(req, res)) return;
 
@@ -205,6 +274,14 @@ module.exports = async function handler(req, res) {
     }
     if (resource === 'kb-file') {
       await handleKbFile(req, res);
+      return;
+    }
+    if (resource === 'trades') {
+      await handleTrades(req, res);
+      return;
+    }
+    if (resource === 'trade-marks') {
+      await handleTradeMarks(req, res);
       return;
     }
     await handleTodos(req, res);
