@@ -5,6 +5,7 @@
 // 改成下面这两个名字，或者把下面两行改成实际的变量名。
 
 const { requireSession } = require('../lib/session');
+const { sanitizeKbUpsert } = require('../lib/kb');
 const {
   fetchQuotes,
   mergeQuoteMarks,
@@ -19,11 +20,6 @@ const {
 
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
-
-// 文件以 base64 存在 KV 里。Vercel Hobby 请求体约 4.5MB，
-// 这里限制原始文件 1.5MB（base64 约 2MB），避免同步接口被撑爆。
-const MAX_FILE_BYTES = 1.5 * 1024 * 1024;
-const MAX_FILEDATA_CHARS = Math.ceil(MAX_FILE_BYTES * 4 / 3) + 64;
 
 function parseStored(v) {
   if (v == null || v === '') return null;
@@ -135,32 +131,24 @@ async function handleKb(req, res) {
   }
 
   if (req.method === 'POST') {
-    const item = req.body;
-    if (!item || !item.id) {
-      res.status(400).json({ error: 'missing id' });
+    const existing = req.body && req.body.id
+      ? parseStored(await kv(['get', `kb:${req.body.id}`]))
+      : null;
+    const result = sanitizeKbUpsert(req.body, existing);
+    if (!result.ok) {
+      const payload = { error: result.error };
+      if (result.maxBytes) payload.maxBytes = result.maxBytes;
+      res.status(result.status || 400).json(payload);
       return;
     }
-    const { fileData, ...rest } = item;
-    if (fileData != null && String(fileData).length > MAX_FILEDATA_CHARS) {
-      res.status(413).json({ error: 'file too large', maxBytes: MAX_FILE_BYTES });
-      return;
+    if (result.file) {
+      await kv(['set', `kb:file:${result.meta.id}`, JSON.stringify(result.file)]);
+    } else if (result.deleteFile) {
+      await kv(['del', `kb:file:${result.meta.id}`]);
     }
-    if (fileData) {
-      await kv(['set', `kb:file:${item.id}`, JSON.stringify({
-        fileData,
-        fileName: item.fileName || '',
-        fileMime: item.fileMime || 'application/octet-stream',
-        fileSize: item.fileSize || 0,
-      })]);
-    }
-    const meta = {
-      ...rest,
-      hasFile: item.category === 'file' && !!(fileData || rest.hasFile),
-    };
-    delete meta.fileData;
-    await kv(['set', `kb:${item.id}`, JSON.stringify(meta)]);
-    await kv(['sadd', 'kb:ids', item.id]);
-    res.status(200).json({ ok: true });
+    await kv(['set', `kb:${result.meta.id}`, JSON.stringify(result.meta)]);
+    await kv(['sadd', 'kb:ids', result.meta.id]);
+    res.status(200).json({ ok: true, item: result.meta });
     return;
   }
 

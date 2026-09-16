@@ -94,6 +94,17 @@ test('auth login sets cookie; status and protected APIs accept it', async () => 
   await todos({ method: 'POST', headers: {}, query: { resource: 'quotes' }, body: { keys: ['US:AAPL'] } }, blockedQuotes);
   assert.equal(blockedQuotes.statusCode, 401);
 
+  const blockedKbWrite = mockRes();
+  await todos(
+    { method: 'POST', headers: {}, query: { resource: 'kb' }, body: { id: 'k1', title: '身份证', category: 'id' } },
+    blockedKbWrite,
+  );
+  assert.equal(blockedKbWrite.statusCode, 401);
+
+  const blockedKbFile = mockRes();
+  await todos({ method: 'GET', headers: {}, query: { resource: 'kb-file', id: 'k1' } }, blockedKbFile);
+  assert.equal(blockedKbFile.statusCode, 401);
+
   const allowedTodos = mockRes();
   await todos({ method: 'GET', headers: { cookie: cookiePair }, query: { resource: 'kb' } }, allowedTodos);
   assert.notEqual(allowedTodos.statusCode, 401);

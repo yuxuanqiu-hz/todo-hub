@@ -192,11 +192,18 @@ button.voice.recording{background:var(--danger);color:#fff;border-color:var(--da
 .kb-field-row input:nth-child(2){flex:1;}
 .kb-file-pick{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px;}
 .kb-file-meta{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);}
+#kbAddBox .add-row{flex-wrap:wrap;}
+#kbTitle{flex:1;min-width:160px;}
+#kbAddBox.editing{border-color:rgba(108,138,255,0.55);}
 .kb-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--nexus);border-radius:10px;margin-bottom:8px;padding:14px;}
 .kb-card.cat-id{border-left-color:var(--kb-id);}
 .kb-card.cat-account{border-left-color:var(--kb-account);}
 .kb-card.cat-file{border-left-color:var(--kb-file);}
+.kb-card.editing{border-color:rgba(108,138,255,0.7);box-shadow:0 0 0 1px rgba(108,138,255,0.28);}
 .kb-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.kb-card-actions{display:flex;align-items:center;gap:6px;flex:none;}
+.kb-card-actions .link-btn{text-decoration:none;padding:4px 8px;border:1px solid var(--border);border-radius:6px;}
+.kb-card-actions .link-btn:hover{color:var(--text);background:var(--surface-2);}
 .kb-card-title{font-size:15px;font-weight:600;line-height:1.4;word-break:break-word;}
 .kb-note{font-size:13px;color:var(--text-muted);margin:8px 0;white-space:pre-wrap;word-break:break-word;}
 .kb-kv{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--border);}
@@ -349,7 +356,7 @@ body.is-locked{padding:0;}
 <header>
 <div>
 <h1>知识库</h1>
-<div class="subtitle">常用信息记录 · 逐行复制 / 文件上传下载</div>
+<div class="subtitle">常用信息记录 · 逐行复制 / 编辑 / 文件上传下载</div>
 </div>
 <div class="header-right">
 <div class="sync-status"><span class="sync-dot"></span><span class="sync-label">已同步</span></div>
@@ -377,7 +384,9 @@ body.is-locked{padding:0;}
 <div class="add-row">
 <input type="text" id="kbTitle" placeholder="标题，例如：身份证 / 公司邮箱">
 <button class="primary" id="kbSaveBtn">保存</button>
+<button type="button" class="ghost" id="kbCancelEdit" hidden>取消</button>
 </div>
+<div class="hint" id="kbEditHint" hidden>正在编辑已有条目 · 保存后更新同一条，不会新增</div>
 <div class="entity-picker" id="kbCatPicker">
 <button class="entity-btn kb-cat active" data-cat="id">证件号码</button>
 <button class="entity-btn kb-cat" data-cat="account">账号密码</button>
@@ -541,6 +550,7 @@ let kbFilter = 'all';
 let kbSearch = '';
 let kbCat = 'id';
 let pendingKbFile = null;
+let editingKbId = null;
 let isAuthed = false;
 let authReason = '';
 let trades = [];
@@ -652,12 +662,14 @@ kbFiles = {};
 trades = [];
 tradeMarks = {};
 editingTradeId = null;
+editingKbId = null;
 quotesUpdatedAt = null;
 quotesStatusText = '';
 quotesStatusKind = '';
 quotesLoading = false;
 lastFetchedQuotes = {};
 clearLocalCaches();
+if(document.getElementById('kbTitle')) resetKbForm();
 const list = document.getElementById('listArea');
 const kbList = document.getElementById('kbListArea');
 const tradeList = document.getElementById('tradeListArea');
@@ -1206,6 +1218,7 @@ const stored = { ...meta, hasFile: item.category==='file' && !!(fileData || meta
 const idx = kbItems.findIndex(x=>x.id===item.id);
 if(idx>=0) kbItems[idx] = stored; else kbItems.push(stored);
 if(fileData) kbFiles[item.id] = { fileData, fileName:item.fileName, fileMime:item.fileMime, fileSize:item.fileSize };
+else if(item.category!=='file') delete kbFiles[item.id];
 persistKbCache();
 try{
 const res = await apiFetch(KB_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(item) });
@@ -1222,6 +1235,7 @@ kbItems = kbItems.filter(x=>x.id!==id);
 delete kbFiles[id];
 persistKbCache();
 try{ await apiFetch(`${KB_API}&id=${encodeURIComponent(id)}`, { method:'DELETE' }); }catch(e){}
+if(editingKbId===id) resetKbForm();
 if(isAuthed) renderKb();
 }
 
@@ -1250,7 +1264,14 @@ row.innerHTML = `<input type="text" class="kb-field-label" placeholder="名称" 
 row.querySelector('.del-btn').addEventListener('click', ()=> row.remove());
 document.getElementById('kbFields').appendChild(row);
 }
+function currentFileHint(item){
+if(item && item.fileName){
+return '当前：' + item.fileName + (item.fileSize!=null?' · '+formatSize(item.fileSize):'') + ' · 不选新文件则保留';
+}
+return '未选择文件 · 单文件不超过 1.5MB';
+}
 function resetKbForm(){
+editingKbId = null;
 document.getElementById('kbTitle').value = '';
 document.getElementById('kbNote').value = '';
 document.getElementById('kbFields').innerHTML = '';
@@ -1259,12 +1280,51 @@ addKbFieldRow();
 pendingKbFile = null;
 document.getElementById('kbFileInput').value = '';
 document.getElementById('kbFileMeta').textContent = '未选择文件 · 单文件不超过 1.5MB';
+document.getElementById('kbFileBtn').textContent = '上传文件或照片';
+document.getElementById('kbSaveBtn').textContent = '保存';
+document.getElementById('kbCancelEdit').hidden = true;
+document.getElementById('kbEditHint').hidden = true;
+document.getElementById('kbAddBox').classList.remove('editing');
+}
+function fillKbForm(item){
+editingKbId = item.id;
+document.getElementById('kbTitle').value = item.title || '';
+document.getElementById('kbNote').value = item.note || '';
+document.getElementById('kbFields').innerHTML = '';
+const fields = (item.fields && item.fields.length) ? item.fields : [{label:'',value:''},{label:'',value:''}];
+fields.forEach(f=> addKbFieldRow(f.label||'', f.value||''));
+pendingKbFile = null;
+document.getElementById('kbFileInput').value = '';
+setKbCat(item.category || 'id');
+document.getElementById('kbFileMeta').textContent = item.category==='file' ? currentFileHint(item) : '未选择文件 · 单文件不超过 1.5MB';
+document.getElementById('kbFileBtn').textContent = item.category==='file' ? '更换文件或照片' : '上传文件或照片';
+document.getElementById('kbSaveBtn').textContent = '保存修改';
+document.getElementById('kbCancelEdit').hidden = false;
+document.getElementById('kbEditHint').hidden = false;
+document.getElementById('kbAddBox').classList.add('editing');
+if(kbFilter==='family'){
+kbFilter = item.category==='id'||item.category==='account'||item.category==='file' ? item.category : 'all';
+document.querySelectorAll('#kbFilters .filter-chip').forEach(b=> b.classList.toggle('active', b.dataset.kbFilter===kbFilter));
+}
+document.getElementById('kbAddBox').scrollIntoView({ behavior:'smooth', block:'start' });
+document.getElementById('kbTitle').focus();
+}
+function startEditKb(id){
+const item = kbItems.find(x=>x.id===id);
+if(!item) return;
+fillKbForm(item);
+renderKb();
 }
 function setKbCat(cat){
 kbCat = cat;
 document.querySelectorAll('.kb-cat').forEach(b=> b.classList.toggle('active', b.dataset.cat===cat));
 document.getElementById('kbTextFields').hidden = cat==='file';
 document.getElementById('kbFileFields').hidden = cat!=='file';
+if(cat==='file' && editingKbId && !pendingKbFile){
+const existing = kbItems.find(x=>x.id===editingKbId);
+document.getElementById('kbFileMeta').textContent = existing && existing.category==='file' ? currentFileHint(existing) : '未选择文件 · 单文件不超过 1.5MB';
+document.getElementById('kbFileBtn').textContent = existing && existing.category==='file' ? '更换文件或照片' : '上传文件或照片';
+}
 }
 function collectKbFields(){
 return [...document.querySelectorAll('#kbFields .kb-field-row')].map(row=>({
@@ -1276,26 +1336,36 @@ value: row.querySelector('.kb-field-value').value.trim()
 async function saveKbFromForm(){
 const title = document.getElementById('kbTitle').value.trim();
 if(!title){ document.getElementById('kbTitle').focus(); return; }
+const existing = editingKbId ? kbItems.find(x=>x.id===editingKbId) : null;
 const item = {
-id: kid(),
+id: editingKbId || kid(),
 title,
 category: kbCat,
 note: kbCat==='file' ? '' : document.getElementById('kbNote').value,
 fields: kbCat==='file' ? [] : collectKbFields(),
-fileName: null,
-fileSize: null,
-fileMime: null,
-hasFile: false,
-createdAt: Date.now(),
+fileName: existing && existing.category==='file' ? existing.fileName : null,
+fileSize: existing && existing.category==='file' ? existing.fileSize : null,
+fileMime: existing && existing.category==='file' ? existing.fileMime : null,
+hasFile: !!(existing && existing.category==='file' && (existing.hasFile || existing.fileName)),
+createdAt: existing && existing.createdAt ? existing.createdAt : Date.now(),
 updatedAt: Date.now()
 };
 if(kbCat==='file'){
-if(!pendingKbFile){ alert('请先选择要上传的文件或照片'); return; }
+if(pendingKbFile){
 item.fileName = pendingKbFile.name;
 item.fileSize = pendingKbFile.size;
 item.fileMime = pendingKbFile.type || 'application/octet-stream';
 item.hasFile = true;
 item.fileData = pendingKbFile.data;
+}else if(!item.hasFile){
+alert('请先选择要上传的文件或照片');
+return;
+}
+}else{
+item.hasFile = false;
+item.fileName = null;
+item.fileSize = null;
+item.fileMime = null;
 }
 await saveKbItem(item);
 resetKbForm();
@@ -1375,13 +1445,16 @@ body += `<div class="kb-kv"><div class="k">${escapeHtml(f.label||'内容')}</div
 if(item.category==='file'){
 body += `<div class="kb-file-row"><div class="kb-file-meta">${escapeHtml(item.fileName||'未命名文件')}${item.fileSize!=null?' · '+formatSize(item.fileSize):''}</div><button type="button" class="ghost" data-dl="${item.id}">下载</button></div>`;
 }
-return `<div class="kb-card cat-${item.category}" data-kid="${item.id}">
+return `<div class="kb-card cat-${item.category}${item.id===editingKbId?' editing':''}" data-kid="${item.id}">
 <div class="kb-card-head">
 <div>
 <div class="kb-card-title">${escapeHtml(item.title)}</div>
 <div class="item-tags" style="margin-top:6px;"><span class="tag">${cat.label}</span></div>
 </div>
+<div class="kb-card-actions">
+<button type="button" class="link-btn" data-edit-kb="${item.id}">编辑</button>
 <button type="button" class="del-btn" data-del="${item.id}" title="删除">×</button>
+</div>
 </div>
 ${body}
 </div>`;
@@ -1458,6 +1531,9 @@ const field = (item && item.fields || [])[Number(btn.dataset.copy)];
 copyText(field ? field.value : '', btn);
 });
 });
+area.querySelectorAll('[data-edit-kb]').forEach(btn=>{
+btn.addEventListener('click', ()=> startEditKb(btn.dataset.editKb));
+});
 area.querySelectorAll('[data-del]').forEach(btn=>{
 btn.addEventListener('click', ()=>{
 if(confirm('删除这条记录？')) deleteKbItem(btn.dataset.del);
@@ -1479,7 +1555,7 @@ btn.addEventListener('click', ()=>{
 document.querySelectorAll('#kbFilters .filter-chip').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
 kbFilter = btn.dataset.kbFilter;
-if(kbFilter==='id'||kbFilter==='account'||kbFilter==='file') setKbCat(kbFilter);
+if(!editingKbId && (kbFilter==='id'||kbFilter==='account'||kbFilter==='file')) setKbCat(kbFilter);
 renderKb();
 });
 });
@@ -1488,6 +1564,7 @@ btn.addEventListener('click', ()=> setKbCat(btn.dataset.cat));
 });
 document.getElementById('kbAddField').addEventListener('click', ()=> addKbFieldRow());
 document.getElementById('kbSaveBtn').addEventListener('click', saveKbFromForm);
+document.getElementById('kbCancelEdit').addEventListener('click', ()=>{ resetKbForm(); renderKb(); });
 document.getElementById('kbTitle').addEventListener('keydown', e=>{ if(e.key==='Enter') saveKbFromForm(); });
 document.getElementById('kbSearch').addEventListener('input', e=>{ kbSearch = e.target.value; renderKb(); });
 document.getElementById('kbFileBtn').addEventListener('click', ()=> document.getElementById('kbFileInput').click());
