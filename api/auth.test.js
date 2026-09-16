@@ -9,6 +9,8 @@ function loadAuth(env) {
   }
   Object.assign(process.env, env);
   delete require.cache[require.resolve('../lib/session')];
+  delete require.cache[require.resolve('../lib/quotes')];
+  delete require.cache[require.resolve('../lib/trades')];
   delete require.cache[require.resolve('./auth')];
   delete require.cache[require.resolve('./todos')];
   return {
@@ -88,6 +90,10 @@ test('auth login sets cookie; status and protected APIs accept it', async () => 
   await todos({ method: 'POST', headers: {}, query: { resource: 'trade-marks' }, body: {} }, blockedMarks);
   assert.equal(blockedMarks.statusCode, 401);
 
+  const blockedQuotes = mockRes();
+  await todos({ method: 'POST', headers: {}, query: { resource: 'quotes' }, body: { keys: ['US:AAPL'] } }, blockedQuotes);
+  assert.equal(blockedQuotes.statusCode, 401);
+
   const allowedTodos = mockRes();
   await todos({ method: 'GET', headers: { cookie: cookiePair }, query: { resource: 'kb' } }, allowedTodos);
   assert.notEqual(allowedTodos.statusCode, 401);
@@ -97,6 +103,32 @@ test('auth login sets cookie; status and protected APIs accept it', async () => 
   await todos({ method: 'GET', headers: { cookie: cookiePair }, query: { resource: 'trades' } }, allowedTrades);
   assert.notEqual(allowedTrades.statusCode, 401);
   assert.equal(allowedTrades.body.error !== 'unauthorized', true);
+
+  const prevFetch = global.fetch;
+  global.fetch = async (url) => {
+    assert.match(String(url), /finance\.yahoo\.com|qt\.gtimg\.cn/);
+    return {
+      ok: true,
+      json: async () => ({
+        spark: {
+          result: [{ symbol: 'AAPL', response: [{ meta: { regularMarketPrice: 331.34 } }] }],
+        },
+      }),
+      text: async () => '',
+    };
+  };
+  try {
+    const quotesRes = mockRes();
+    await todos(
+      { method: 'POST', headers: { cookie: cookiePair }, query: { resource: 'quotes' }, body: { keys: ['US:AAPL', 'US:NOPE'] } },
+      quotesRes,
+    );
+    assert.equal(quotesRes.statusCode, 200);
+    assert.equal(quotesRes.body.quotes['US:AAPL'], 331.34);
+    assert.equal(Array.isArray(quotesRes.body.failed), true);
+  } finally {
+    global.fetch = prevFetch;
+  }
 
   const logout = mockRes();
   await auth({ method: 'DELETE', headers: { cookie: cookiePair } }, logout);

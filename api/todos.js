@@ -6,6 +6,12 @@
 
 const { requireSession } = require('../lib/session');
 const {
+  fetchQuotes,
+  mergeQuoteMarks,
+  openHoldingRequests,
+  parseQuoteKeys,
+} = require('../lib/quotes');
+const {
   deleteAndValidate,
   sanitizeMarks,
   upsertAndValidate,
@@ -256,18 +262,70 @@ async function handleTradeMarks(req, res) {
   res.status(405).json({ error: 'method not allowed' });
 }
 
-module.exports = async function handler(req, res) {
-  if (!requireSession(req, res)) return;
+function readQuoteInput(req) {
+  const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+  const keys = [];
+  if (req.query && req.query.keys) keys.push(req.query.keys);
+  if (Array.isArray(body.keys)) keys.push(...body.keys);
+  else if (typeof body.keys === 'string') keys.push(body.keys);
+  return { keys, items: body.items };
+}
 
-  if (!KV_URL || !KV_TOKEN) {
-    res.status(500).json({
-      error: '缺少 KV_REST_API_URL / KV_REST_API_TOKEN 环境变量，先在 Vercel 项目里连接一个 KV 存储',
+async function handleQuotes(req, res) {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    res.status(405).json({ error: 'method not allowed' });
+    return;
+  }
+
+  let requests = parseQuoteKeys(readQuoteInput(req));
+  if (!requests.length && KV_URL && KV_TOKEN) {
+    requests = openHoldingRequests(await loadAllTrades());
+  }
+
+  if (!requests.length) {
+    res.status(200).json({
+      quotes: {},
+      failed: [],
+      updatedAt: null,
+      skipped: 'no-open-positions',
+      marks: null,
     });
     return;
   }
 
+  const result = await fetchQuotes(requests);
+  let marks = null;
+  if (KV_URL && KV_TOKEN && Object.keys(result.quotes).length) {
+    const existing = sanitizeMarks(parseStored(await kv(['get', 'trade:marks'])) || {});
+    marks = mergeQuoteMarks(existing, result.quotes);
+    await kv(['set', 'trade:marks', JSON.stringify(marks)]);
+  }
+
+  res.status(200).json({
+    quotes: result.quotes,
+    failed: result.failed,
+    updatedAt: result.updatedAt,
+    marks,
+  });
+}
+
+module.exports = async function handler(req, res) {
+  if (!requireSession(req, res)) return;
+
   try {
     const resource = req.query.resource || 'todos';
+    if (resource === 'quotes') {
+      await handleQuotes(req, res);
+      return;
+    }
+
+    if (!KV_URL || !KV_TOKEN) {
+      res.status(500).json({
+        error: '缺少 KV_REST_API_URL / KV_REST_API_TOKEN 环境变量，先在 Vercel 项目里连接一个 KV 存储',
+      });
+      return;
+    }
+
     if (resource === 'kb') {
       await handleKb(req, res);
       return;

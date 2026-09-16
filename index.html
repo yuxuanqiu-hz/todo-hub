@@ -105,6 +105,7 @@ select{background:var(--surface-2);border:1px solid var(--border);border-radius:
 .meta-row input[type=date]{font-family:var(--font-mono);font-size:12px;width:150px;}
 button.primary{background:var(--nexus);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:var(--font-body);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;}
 button.primary:hover{filter:brightness(1.1);}
+button.primary:disabled{opacity:0.55;cursor:not-allowed;filter:none;}
 button.voice{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;}
 button.voice.recording{background:var(--danger);color:#fff;border-color:var(--danger);}
 
@@ -263,6 +264,14 @@ body.is-locked{padding:0;}
 .section-tabs{display:flex;gap:8px;margin-bottom:16px;}
 .section-tab{font-family:var(--font-mono);font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;}
 .section-tab.active{background:var(--surface-2);color:var(--text);border-color:var(--text-dim);}
+.quotes-bar{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;}
+.quotes-bar .primary{flex:none;}
+.quotes-meta{flex:1;min-width:180px;}
+.quotes-updated{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);line-height:1.5;}
+.quotes-status{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.55;}
+.quotes-status.ok{color:var(--meridian);}
+.quotes-status.err{color:var(--danger);}
+.quotes-status.loading{color:var(--nexus);}
 @media (max-width:560px){
 .trade-grid{grid-template-columns:1fr;}
 .trade-grid .span-2{grid-column:auto;}
@@ -395,7 +404,7 @@ body.is-locked{padding:0;}
 <header>
 <div>
 <h1>交易</h1>
-<div class="subtitle">股票买卖流水 · 成交价自填 · 无实时行情</div>
+<div class="subtitle">股票买卖流水 · 按需抓取现价 · 不轮询</div>
 </div>
 <div class="header-right">
 <div class="sync-status"><span class="sync-dot"></span><span class="sync-label">已同步</span></div>
@@ -404,6 +413,14 @@ body.is-locked{padding:0;}
 </div>
 </div>
 </header>
+
+<div class="quotes-bar" id="quotesBar">
+<button type="button" class="primary" id="quoteRefreshBtn">更新股价</button>
+<div class="quotes-meta">
+<div class="quotes-updated" id="quoteUpdatedAt">尚未更新现价</div>
+<div class="quotes-status" id="quoteStatus">登录后会自动拉一次持仓现价；也可随时点按钮再拉。不后台刷新。</div>
+</div>
+</div>
 
 <div class="section-tabs" id="tradeSectionTabs">
 <button type="button" class="section-tab active" data-trade-section="ledger">流水</button>
@@ -455,7 +472,7 @@ body.is-locked{padding:0;}
 <textarea id="tradeNote" placeholder="账户、策略、拆合股等（选填）"></textarea>
 </div>
 </div>
-<div class="hint">价格以本次成交价为准，不拉行情。卖出按成交时间顺序校验，数量不能超过当时持仓。成本用移动加权平均，买入费用计入成本，卖出费用从已实现盈亏扣除。各市场按 CNY / HKD / USD 分开汇总。</div>
+<div class="hint">记一笔按本次成交价。现价在持仓里按需抓取或手改，不轮询。卖出按成交时间顺序校验，数量不能超过当时持仓。成本用移动加权平均，买入费用计入成本，卖出费用从已实现盈亏扣除。各市场按 CNY / HKD / USD 分开汇总。</div>
 <div class="trade-actions">
 <button type="button" class="primary" id="tradeSaveBtn">记一笔</button>
 <button type="button" class="ghost" id="tradeCancelEdit" hidden>取消编辑</button>
@@ -476,7 +493,7 @@ body.is-locked{padding:0;}
 </div>
 
 <div id="tradePositionSection" hidden>
-<div class="hint" style="margin:0 0 14px 2px;">持仓由流水汇总。未实现盈亏仅在手填「现价」后计算，不请求外部行情。不同币种不会加总成一个数。</div>
+<div class="hint" style="margin:0 0 14px 2px;">持仓由流水汇总。登录或点「更新股价」会抓取持仓&gt;0 标的的现价并写入未实现盈亏；仍可手改现价。失败时保留旧现价。不同币种不会加总成一个数。</div>
 <div id="tradePositionArea"><div class="empty">加载中…</div></div>
 </div>
 </div>
@@ -496,6 +513,7 @@ const API = '/api/todos';
 const KB_API = '/api/todos?resource=kb';
 const TRADE_API = '/api/todos?resource=trades';
 const TRADE_MARKS_API = '/api/todos?resource=trade-marks';
+const TRADE_QUOTES_API = '/api/todos?resource=quotes';
 const TRADE_MARKETS = {
 A: { label:'A股', currency:'CNY', currencyLabel:'人民币', symbolPh:'600519', namePh:'贵州茅台' },
 HK: { label:'港股', currency:'HKD', currencyLabel:'港币', symbolPh:'00700', namePh:'腾讯控股' },
@@ -533,6 +551,11 @@ let tradeFilter = 'all';
 let tradeSearch = '';
 let tradeSection = 'ledger';
 let editingTradeId = null;
+let quotesUpdatedAt = null;
+let quotesStatusText = '登录后会自动拉一次持仓现价；也可随时点按钮再拉。不后台刷新。';
+let quotesStatusKind = '';
+let quotesLoading = false;
+let lastFetchedQuotes = {};
 
 function uid(){ return 't' + Date.now() + Math.random().toString(36).slice(2,7); }
 function kid(){ return 'k' + Date.now() + Math.random().toString(36).slice(2,7); }
@@ -561,6 +584,7 @@ localStorage.removeItem('kb-cache');
 localStorage.removeItem('kb-files');
 localStorage.removeItem('trades-cache');
 localStorage.removeItem('trade-marks-cache');
+localStorage.removeItem('trade-quotes-meta');
 }catch(e){}
 }
 
@@ -615,7 +639,9 @@ document.title = pageTitle(currentPage);
 if(currentPage==='kb') renderKb();
 else if(currentPage==='trades') renderTrades();
 else render();
-Promise.all([loadTodos(), loadKb(), loadTrades()]);
+Promise.all([loadTodos(), loadKb(), loadTrades()]).then(()=>{
+if(isAuthed) refreshQuotes({ source:'login' });
+});
 }
 
 function handleUnauthorized(){
@@ -626,6 +652,11 @@ kbFiles = {};
 trades = [];
 tradeMarks = {};
 editingTradeId = null;
+quotesUpdatedAt = null;
+quotesStatusText = '';
+quotesStatusKind = '';
+quotesLoading = false;
+lastFetchedQuotes = {};
 clearLocalCaches();
 const list = document.getElementById('listArea');
 const kbList = document.getElementById('kbListArea');
@@ -1488,6 +1519,7 @@ if(!isAuthed) return;
 try{
 localStorage.setItem('trades-cache', JSON.stringify(trades));
 localStorage.setItem('trade-marks-cache', JSON.stringify(tradeMarks));
+localStorage.setItem('trade-quotes-meta', JSON.stringify({ updatedAt: quotesUpdatedAt }));
 }catch(e){}
 }
 function restoreTradesCache(){
@@ -1495,6 +1527,10 @@ try{ trades = JSON.parse(localStorage.getItem('trades-cache')||'[]'); }
 catch(e){ trades = []; }
 try{ tradeMarks = JSON.parse(localStorage.getItem('trade-marks-cache')||'{}'); }
 catch(e){ tradeMarks = {}; }
+try{
+const meta = JSON.parse(localStorage.getItem('trade-quotes-meta')||'{}');
+if(Number.isFinite(Number(meta.updatedAt))) quotesUpdatedAt = Number(meta.updatedAt);
+}catch(e){}
 }
 function tradeRoundQty(n){ return Math.round((Number(n)||0)*1e8)/1e8; }
 function tradeRoundMoney(n){ return Math.round((Number(n)||0)*1e8)/1e8; }
@@ -1744,6 +1780,12 @@ apiFetch(TRADE_MARKS_API)
 if(!tradeRes.ok) throw new Error('load failed');
 trades = await tradeRes.json();
 if(markRes.ok) tradeMarks = await markRes.json();
+if(quotesLoading && lastFetchedQuotes){
+Object.entries(lastFetchedQuotes).forEach(([key, price])=>{
+const n = Number(price);
+if(Number.isFinite(n) && n>0) tradeMarks[key] = n;
+});
+}
 persistTradesCache();
 setSync('ok');
 }catch(e){
@@ -1828,6 +1870,111 @@ setSync('err');
 }
 }
 
+function formatQuoteTime(ms){
+if(!Number.isFinite(ms) || ms<=0) return '';
+try{
+return new Date(ms).toLocaleString('zh-CN', { hour12:false });
+}catch(e){
+return '';
+}
+}
+function setQuotesStatus(kind, text){
+quotesStatusKind = kind || '';
+quotesStatusText = text || '';
+renderQuotesBar();
+}
+function renderQuotesBar(){
+const btn = document.getElementById('quoteRefreshBtn');
+const updated = document.getElementById('quoteUpdatedAt');
+const status = document.getElementById('quoteStatus');
+if(!btn || !updated || !status) return;
+btn.disabled = quotesLoading;
+btn.textContent = quotesLoading ? '正在更新…' : '更新股价';
+updated.textContent = quotesUpdatedAt
+? ('上次更新：' + formatQuoteTime(quotesUpdatedAt))
+: '尚未更新现价';
+status.className = 'quotes-status' + (quotesStatusKind ? ' ' + quotesStatusKind : '');
+status.textContent = quotesStatusText || '';
+status.hidden = !quotesStatusText;
+}
+function applyFetchedQuotes(quotes){
+if(!quotes || typeof quotes !== 'object') return 0;
+let n = 0;
+Object.entries(quotes).forEach(([key, price])=>{
+const v = Number(price);
+if(!Number.isFinite(v) || v<=0) return;
+if(!/^(A|HK|US):.+$/.test(key)) return;
+tradeMarks[key] = v;
+lastFetchedQuotes[key] = v;
+n += 1;
+});
+return n;
+}
+function openHoldingKeys(){
+const { positions } = computeTradePositions(trades, tradeMarks);
+return positions.filter(p=>p.qty>0).map(p=>p.key);
+}
+function failedQuoteLabel(item){
+if(!item) return '';
+if(item.key) return item.key;
+if(item.market && item.symbol) return item.market+':'+item.symbol;
+return item.symbol || '';
+}
+
+async function refreshQuotes(opts){
+if(!isAuthed) return;
+if(quotesLoading) return;
+const source = opts && opts.source;
+const keys = openHoldingKeys();
+if(keys.length===0){
+setQuotesStatus('', source==='login'
+? '当前没有持仓，跳过自动更新。有持仓后再点「更新股价」。'
+: '当前没有持仓（数量>0），没有请求行情。');
+if(currentPage==='trades') renderTrades();
+return;
+}
+quotesLoading = true;
+setQuotesStatus('loading', '正在抓取 '+keys.length+' 只持仓现价…');
+try{
+const res = await apiFetch(TRADE_QUOTES_API, {
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body: JSON.stringify({ keys })
+});
+if(!res.ok){
+const body = await res.json().catch(()=>({}));
+throw new Error(body.error || '更新失败');
+}
+const body = await res.json();
+const quotes = body && body.quotes && typeof body.quotes==='object' ? body.quotes : {};
+const failed = Array.isArray(body && body.failed) ? body.failed : [];
+const applied = applyFetchedQuotes(quotes);
+if(applied>0){
+if(Number.isFinite(Number(body.updatedAt))) quotesUpdatedAt = Number(body.updatedAt);
+else quotesUpdatedAt = Date.now();
+persistTradesCache();
+await saveTradeMarks();
+}
+const failLabels = failed.map(failedQuoteLabel).filter(Boolean);
+if(applied===0 && failLabels.length){
+setQuotesStatus('err', '更新失败，已保留原有现价。失败：'+failLabels.join('、'));
+}else if(failLabels.length){
+setQuotesStatus('err', '已更新 '+applied+' 只，失败 '+failLabels.length+' 只（'+failLabels.join('、')+'）。失败标的保留原现价。');
+}else{
+setQuotesStatus('ok', source==='login'
+? '已按持仓更新 '+applied+' 只现价。需要最新价时再点「更新股价」。'
+: '已更新 '+applied+' 只现价。');
+}
+}catch(e){
+if(e.status === 401 || e.status === 503) return;
+setQuotesStatus('err', '更新失败：'+(e.message||'请稍后重试')+'。已保留原有现价。');
+}finally{
+quotesLoading = false;
+renderQuotesBar();
+if(isAuthed && currentPage==='trades') renderTrades();
+}
+}
+
 async function submitTradeForm(){
 const raw = readTradeForm();
 const sanitized = sanitizeTradeClient(raw);
@@ -1900,14 +2047,15 @@ return `<div class="pos-card mkt-${pos.market} ${closed?'closed':''}">
 <div><div class="k">成本均价</div>${closed?'—':formatMoney(pos.avgCost, pos.currency)}</div>
 <div><div class="k">持仓总成本</div>${formatMoney(pos.totalCost, pos.currency)}</div>
 <div><div class="k">已实现盈亏</div><span class="${pnlClass(pos.realizedPnl)}">${signedMoney(pos.realizedPnl, pos.currency)}</span></div>
-<div><div class="k">未实现盈亏</div>${unreal==null?'<span class="tag">填现价后计算</span>':`<span class="${pnlClass(unreal)}">${signedMoney(unreal, pos.currency)}</span>`}</div>
+<div><div class="k">未实现盈亏</div>${unreal==null?'<span class="tag">更新现价后计算</span>':`<span class="${pnlClass(unreal)}">${signedMoney(unreal, pos.currency)}</span>`}</div>
 <div><div class="k">持仓收益率</div>${pos.holdingReturn==null?'—':`<span class="${pnlClass(pos.holdingReturn)}">${formatPct(pos.holdingReturn)}</span>`}</div>
 </div>
-${closed?'':`<div class="pos-mark"><span class="field-label" style="margin:0;">现价（自填）</span><input type="number" min="0" step="any" inputmode="decimal" data-mark-key="${pos.key}" value="${pos.markPrice!=null?pos.markPrice:''}" placeholder="不拉行情"></div>`}
+${closed?'':`<div class="pos-mark"><span class="field-label" style="margin:0;">现价</span><input type="number" min="0" step="any" inputmode="decimal" data-mark-key="${pos.key}" value="${pos.markPrice!=null?pos.markPrice:''}" placeholder="可手改"></div>`}
 </div>`;
 }
 
 function renderTrades(){
+renderQuotesBar();
 const { positions } = computeTradePositions(trades, tradeMarks);
 const area = document.getElementById('tradeListArea');
 const posArea = document.getElementById('tradePositionArea');
@@ -1941,8 +2089,8 @@ const g = sums[ccy];
 const rows = positions.filter(p=>p.currency===ccy);
 if(rows.length===0) return;
 const unrealText = g.hasUnrealized
-? `${signedMoney(g.unrealizedPnl, ccy)}${g.missingMarks?' · 部分持仓未填现价':''}`
-: (g.missingMarks ? '未填现价' : '—');
+? `${signedMoney(g.unrealizedPnl, ccy)}${g.missingMarks?' · 部分持仓无现价':''}`
+: (g.missingMarks ? '无现价' : '—');
 html += `<div class="currency-block">
 <div class="currency-head">
 <div class="currency-title">${label} · ${ccy} · ${TRADE_MARKETS[mkt].label}</div>
@@ -1980,6 +2128,7 @@ renderTrades();
 });
 document.getElementById('tradeSaveBtn').addEventListener('click', submitTradeForm);
 document.getElementById('tradeCancelEdit').addEventListener('click', ()=> resetTradeForm());
+document.getElementById('quoteRefreshBtn').addEventListener('click', ()=> refreshQuotes({ source:'button' }));
 document.getElementById('tradeSearch').addEventListener('input', e=>{ tradeSearch = e.target.value; renderTrades(); });
 document.getElementById('tradeSymbol').addEventListener('keydown', e=>{ if(e.key==='Enter') submitTradeForm(); });
 
