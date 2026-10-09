@@ -2117,6 +2117,44 @@ if(name) name.placeholder = meta.namePh;
 function tradeEditRoot(id){
 return Array.from(document.querySelectorAll('[data-trade-edit]')).find(el => el.dataset.tradeEdit===id) || null;
 }
+function readOpenTradeEditDraft(){
+if(!editingTradeId) return null;
+const root = tradeEditRoot(editingTradeId);
+if(!root) return null;
+const field = name => {
+const el = root.querySelector('[data-field="'+name+'"]');
+return el ? el.value : null;
+};
+const marketBtn = root.querySelector('[data-edit-market].active');
+const sideBtn = root.querySelector('[data-edit-side].active');
+const err = root.querySelector('[data-trade-edit-error]');
+return {
+id: editingTradeId,
+market: marketBtn ? marketBtn.dataset.editMarket : null,
+side: sideBtn ? sideBtn.dataset.editSide : null,
+symbol: field('symbol'),
+name: field('name'),
+price: field('price'),
+qty: field('qty'),
+tradedAt: field('tradedAt'),
+fee: field('fee'),
+tax: field('tax'),
+note: field('note'),
+error: err && !err.hidden ? err.textContent : ''
+};
+}
+function applyTradeEditDraft(draft){
+if(!draft) return;
+const root = tradeEditRoot(draft.id);
+if(!root) return;
+['symbol','name','price','qty','tradedAt','fee','tax','note'].forEach(name => {
+const el = root.querySelector('[data-field="'+name+'"]');
+if(el && draft[name]!=null) el.value = draft[name];
+});
+if(draft.market) root.querySelectorAll('[data-edit-market]').forEach(b => b.classList.toggle('active', b.dataset.editMarket===draft.market));
+if(draft.side) root.querySelectorAll('[data-edit-side]').forEach(b => b.classList.toggle('active', b.dataset.editSide===draft.side));
+if(draft.error) setInlineTradeError(draft.id, draft.error);
+}
 function setInlineTradeError(id, msg){
 const root = tradeEditRoot(id);
 const el = root ? root.querySelector('[data-trade-edit-error]') : null;
@@ -2316,6 +2354,7 @@ ${closed?'':`<div class="pos-mark"><span class="field-label" style="margin:0;">�
 }
 
 function renderTrades(){
+const editDraft = readOpenTradeEditDraft();
 renderQuotesBar();
 const { positions } = computeTradePositions(trades, tradeMarks);
 const area = document.getElementById('tradeListArea');
@@ -2334,6 +2373,12 @@ area.innerHTML = q || tradeFilter!=='all'
 : '<div class="empty">还没有交易记录 · 上面记一笔买卖</div>';
 } else {
 area.innerHTML = list.map(tradeItemHtml).join('');
+area.querySelectorAll('[data-trade-edit] input, [data-trade-edit] textarea').forEach(el => {
+el.addEventListener('focus', () => {
+requestAnimationFrame(() => { try { el.select(); } catch (err) {} });
+});
+});
+if(editDraft) applyTradeEditDraft(editDraft);
 }
 
 if(positions.length===0){
