@@ -31,6 +31,58 @@ function loadEnvFile(filePath) {
 loadEnvFile(path.join(ROOT, '.env.local'));
 loadEnvFile(path.join(ROOT, '.env'));
 
+function installMemoryKv() {
+  const strings = new Map();
+  const sets = new Map();
+  function members(key) {
+    if (!sets.has(key)) sets.set(key, new Set());
+    return sets.get(key);
+  }
+  function exec(cmd) {
+    const op = String(cmd[0] || '').toLowerCase();
+    const key = cmd[1];
+    if (op === 'get') return strings.has(key) ? strings.get(key) : null;
+    if (op === 'set') {
+      strings.set(key, String(cmd[2] ?? ''));
+      return 'OK';
+    }
+    if (op === 'del') return strings.delete(key) ? 1 : 0;
+    if (op === 'sadd') {
+      const bucket = members(key);
+      const before = bucket.size;
+      bucket.add(String(cmd[2]));
+      return bucket.size - before;
+    }
+    if (op === 'srem') return members(key).delete(String(cmd[2])) ? 1 : 0;
+    if (op === 'smembers') return Array.from(members(key));
+    return null;
+  }
+
+  const orig = global.fetch.bind(global);
+  global.fetch = async (input, init) => {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (!url.startsWith('http://memory.kv')) return orig(input, init);
+    const method = ((init && init.method) || (typeof input !== 'string' && input.method) || 'GET').toUpperCase();
+    let cmd;
+    if (method === 'POST') {
+      cmd = JSON.parse((init && init.body) || '[]');
+    } else {
+      const parsed = new URL(url);
+      cmd = parsed.pathname.split('/').filter(Boolean).map((part) => decodeURIComponent(part));
+    }
+    return new Response(JSON.stringify({ result: exec(cmd) }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+}
+
+if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+  process.env.KV_REST_API_URL = 'http://memory.kv';
+  process.env.KV_REST_API_TOKEN = 'memory';
+  installMemoryKv();
+}
+
 const auth = require('../api/auth');
 const todos = require('../api/todos');
 
@@ -112,6 +164,8 @@ const server = http.createServer(async (req, res) => {
 const port = Number(process.env.PORT || 4173);
 server.listen(port, '127.0.0.1', () => {
   const configured = Boolean(process.env.SITE_PASSWORD);
+  const memoryKv = process.env.KV_REST_API_URL === 'http://memory.kv';
   console.log(`local server http://127.0.0.1:${port}`);
   console.log(configured ? 'SITE_PASSWORD is set' : 'SITE_PASSWORD is missing; access will be denied');
+  console.log(memoryKv ? 'KV: in-memory (no KV_REST_API_URL)' : 'KV: remote');
 });
